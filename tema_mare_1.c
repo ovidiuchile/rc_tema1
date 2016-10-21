@@ -6,18 +6,23 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
-void myStat(char path_file[],char rezultat[])
+void myStat(char file_path[],char rezultat[])
 {
-	if(access(path_file,F_OK)==-1)
+	if(access(file_path,F_OK)==-1)
 	{
 		perror("");
-		printf("Fisierul \"%s\" nu exista\n",path_file);
+		printf("Fisierul \"%s\" nu exista\n",file_path);
 		exit(2);
 	}
-	else
+	struct stat informatii;
+	if(stat(file_path,&informatii)==-1)
 	{
-		printf("Succes");
+		perror("");
+		printf("Eroare la utilizarea myStat \"%s\"\n",file_path);
+		exit(3);
 	}
+	
+
 }
 int main(int argc, char* argv[])
 {
