@@ -6,6 +6,28 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
+
+char* longlongtoarray(long long numar)
+{
+	char sir[500]="";
+	int k=0,i;
+	while(numar!=0)
+	{
+		sir[k]=numar%10+'0';
+		numar/=10;
+		k++;
+	}
+	sir[k]='\0';
+	for(i=0;i<k/2;i++)
+	{
+		char aux=sir[i];
+		sir[i]=sir[k-1-i];
+		sir[k-i-1]=aux;
+	}
+	return sir;
+
+}
 void myStat(char file_path[],char rezultat[])
 {
 
@@ -27,6 +49,11 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,"  File: `");
 	strcat(rezultat,file_path);
 	strcat(rezultat,"'\n");
+
+	strcat(rezultat,"  Size: ");
+	strcat(rezultat,longlongtoarray((long long)informatii.st_size));
+	strcat(rezultat,"\n");
+
 	
 }
 int main(int argc, char* argv[])
