@@ -8,12 +8,14 @@
 #include <string.h>
 void myStat(char file_path[],char rezultat[])
 {
+
 	if(access(file_path,F_OK)==-1)
 	{
 		perror("");
 		printf("Fisierul \"%s\" nu exista\n",file_path);
 		exit(2);
 	}
+
 	struct stat informatii;
 	if(stat(file_path,&informatii)==-1)
 	{
@@ -21,8 +23,11 @@ void myStat(char file_path[],char rezultat[])
 		printf("Eroare la utilizarea myStat \"%s\"\n",file_path);
 		exit(3);
 	}
-	
 
+	strcat(rezultat,"  File: `");
+	strcat(rezultat,file_path);
+	strcat(rezultat,"'\n");
+	
 }
 int main(int argc, char* argv[])
 {
@@ -33,6 +38,6 @@ int main(int argc, char* argv[])
 	}
 	char rezultat[2000]="";
 	myStat(argv[1],rezultat);
-	printf("%s\n",rezultat);
+	printf("%s",rezultat);
 	return 0;
 }
