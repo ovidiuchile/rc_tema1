@@ -50,8 +50,16 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,file_path);
 	strcat(rezultat,"'\n");
 
-	strcat(rezultat,"  Size: ");
+	strcat(rezultat,"Size: ");
 	strcat(rezultat,longlongtoarray((long long)informatii.st_size));
+	strcat(rezultat,"\n");
+
+	strcat(rezultat,"Blocks: ");
+	strcat(rezultat,longlongtoarray((long long)informatii.st_blocks));
+	strcat(rezultat,"\n");
+
+	strcat(rezultat,"IO Block: ");
+	strcat(rezultat,longlongtoarray((long long)informatii.st_blksize));
 	strcat(rezultat,"\n");
 
 	
