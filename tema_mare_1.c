@@ -62,16 +62,17 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,longlongtoarray((long long)informatii.st_blksize));
 	strcat(rezultat,"    ");
 
+	char file_access[11];
 	switch(informatii.st_mode & S_IFMT)
 	{
-		case S_IFDIR: strcat(rezultat,"directory\n"); break;
-		case S_IFCHR: strcat(rezultat,"character-oriented device file\n"); break;
-		case S_IFBLK: strcat(rezultat,"block-oriented device file\n"); break;
-		case S_IFREG: strcat(rezultat,"regular file\n"); break;
-		case S_IFLNK: strcat(rezultat,"symbolic link\n"); break;
-		case S_IFSOCK:strcat(rezultat,"socket\n");  break;
-		case S_IFIFO: strcat(rezultat,"FIFO/pipe\n"); break;
-		default: strcat(rezultat,"unkown file type\n"); break;
+		case S_IFDIR: strcat(rezultat,"directory\n"); file_access[0]='d';break;
+		case S_IFCHR: strcat(rezultat,"character-oriented device file\n"); file_access[0]='c' ; break;
+		case S_IFBLK: strcat(rezultat,"block-oriented device file\n"); file_access[0]='b' ; break;
+		case S_IFREG: strcat(rezultat,"regular file\n"); file_access[0]='-' ; break;
+		case S_IFLNK: strcat(rezultat,"symbolic link\n"); file_access[0]='l' ; break;
+		case S_IFSOCK:strcat(rezultat,"socket\n"); file_access[0]='s' ;  break;
+		case S_IFIFO: strcat(rezultat,"FIFO/pipe\n"); file_access[0]='p' ; break;
+		default: strcat(rezultat,"unkown file type\n"); file_access[0]='u' ; break;
 	}
 	
 	char sir[50]="";
@@ -90,7 +91,24 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,longlongtoarray((long long)informatii.st_nlink));
 	strcat(rezultat,"\n");
     
-    
+	strcat(rezultat,"Access: (0");
+	long long octal_access_mode=0;
+	if(informatii.st_mode & S_IRUSR) {file_access[1]='r'; octal_access_mode=octal_access_mode+400;} else file_access[1]='-';
+	if(informatii.st_mode & S_IWUSR) {file_access[2]='w'; octal_access_mode=octal_access_mode+200;} else file_access[2]='-';
+	if(informatii.st_mode & S_IXUSR) {file_access[3]='x'; octal_access_mode=octal_access_mode+100;} else file_access[3]='-';
+	if(informatii.st_mode & S_IRGRP) {file_access[4]='r'; octal_access_mode=octal_access_mode+ 40;} else file_access[4]='-';
+	if(informatii.st_mode & S_IWGRP) {file_access[5]='w'; octal_access_mode=octal_access_mode+ 20;} else file_access[5]='-';
+	if(informatii.st_mode & S_IXGRP) {file_access[6]='x'; octal_access_mode=octal_access_mode+ 10;} else file_access[6]='-';
+	if(informatii.st_mode & S_IROTH) {file_access[7]='r'; octal_access_mode=octal_access_mode+  4;} else file_access[7]='-';
+	if(informatii.st_mode & S_IWOTH) {file_access[8]='w'; octal_access_mode=octal_access_mode+  2;} else file_access[8]='-';
+	if(informatii.st_mode & S_IXOTH) {file_access[9]='x'; octal_access_mode=octal_access_mode+  1;} else file_access[9]='-';
+	file_access[10]='\0';
+	strcat(rezultat,longlongtoarray(octal_access_mode));
+	strcat(rezultat,"/");
+	strcat(rezultat,file_access);
+	strcat(rezultat,")    \n");
+
+
 }
 int main(int argc, char* argv[])
 {
