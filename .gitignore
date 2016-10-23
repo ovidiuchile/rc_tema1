@@ -1,2 +1,3 @@
 evvrything
 sftp-config.json
+stat, fstat, lstat - get file status.c

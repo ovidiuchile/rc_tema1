@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <pwd.h>
+#include <grp.h>
 
 char* longlongtoarray(long long numar)
 {
@@ -106,10 +108,30 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,longlongtoarray(octal_access_mode));
 	strcat(rezultat,"/");
 	strcat(rezultat,file_access);
-	strcat(rezultat,")    \n");
+	strcat(rezultat,")    ");
 
+	struct passwd *user;
+	user=getpwuid((uid_t)informatii.st_uid);
+	strcat(rezultat,"Uid: (");
+	strcat(rezultat,longlongtoarray((long long)informatii.st_uid));
+	strcat(rezultat,"/");
+	if(user!=0)
+		strcat(rezultat,user->pw_name);
+	else
+		strcat(rezultat,"-");
+	strcat(rezultat,")    ");
 
-}
+	struct group *grup;
+	grup=getgrgid((gid_t)informatii.st_gid);
+	strcat(rezultat,"Gid: ( ");
+	strcat(rezultat,longlongtoarray((long long)informatii.st_gid));
+	strcat(rezultat,"/   ");
+	if(grup!=0)
+		strcat(rezultat,grup->gr_name);
+	else
+		strcat(rezultat,"-");
+	strcat(rezultat,")\n");
+}	
 int main(int argc, char* argv[])
 {
 	if(argc != 2)
