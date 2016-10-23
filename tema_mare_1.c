@@ -62,7 +62,8 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,longlongtoarray((long long)informatii.st_blksize));
 	strcat(rezultat,"\n");
 
-	
+	strcat(rezultat,longlongtoarray((unsigned long long)informatii.st_mode));
+	strcat(rezultat,"\n");
 }
 int main(int argc, char* argv[])
 {
