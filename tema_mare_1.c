@@ -62,8 +62,19 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,longlongtoarray((long long)informatii.st_blksize));
 	strcat(rezultat,"\n");
 
-	strcat(rezultat,longlongtoarray((unsigned long long)informatii.st_mode));
-	strcat(rezultat,"\n");
+	switch(informatii.st_mode & S_IFMT)
+	{
+		case S_IFDIR: strcat(rezultat,"directory\n"); break;
+		case S_IFCHR: strcat(rezultat,"character-oriented device file\n"); break;
+		case S_IFBLK: strcat(rezultat,"block-oriented device file\n"); break;
+		case S_IFREG: strcat(rezultat,"regular file\n"); break;
+		case S_IFLNK: strcat(rezultat,"symbolic link\n"); break;
+		case S_IFSOCK:strcat(rezultat,"socket\n");  break;
+		case S_IFIFO: strcat(rezultat,"FIFO/pipe\n"); break;
+		default: break;
+	}
+	
+	
 }
 int main(int argc, char* argv[])
 {
