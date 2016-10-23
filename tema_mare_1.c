@@ -9,6 +9,8 @@
 #include <limits.h>
 #include <pwd.h>
 #include <grp.h>
+#include <time.h>
+
 
 char* longlongtoarray(long long numar)
 {
@@ -28,6 +30,29 @@ char* longlongtoarray(long long numar)
 		sir[k-i-1]=aux;
 	}
 	return sir;
+
+}
+char* time_ttoarray(time_t timp)
+{
+	struct tm *timp_spart=localtime(&timp);
+	char sir[100]="";
+	strcat(sir,longlongtoarray((long long)(timp_spart->tm_year+1900)));
+	strcat(sir,"-");
+	strcat(sir,longlongtoarray((long long)(timp_spart->tm_mon+1)));
+	strcat(sir,"-");
+	strcat(sir,longlongtoarray((long long)(timp_spart->tm_mday)));
+	strcat(sir," ");
+	strcat(sir,longlongtoarray((long long)(timp_spart->tm_hour)));
+	strcat(sir,":");
+	strcat(sir,longlongtoarray((long long)(timp_spart->tm_min)));
+	strcat(sir,":");
+	strcat(sir,longlongtoarray((long long)(timp_spart->tm_sec)));
+	strcat(sir," +0");
+	time_t abc=time(NULL);
+  	struct tm t;
+  	localtime_r(&abc, &t);
+  	strcat(sir,longlongtoarray(t.tm_gmtoff/3600));
+	strcat(sir,"00\n");
 
 }
 void myStat(char file_path[],char rezultat[])
@@ -131,6 +156,15 @@ void myStat(char file_path[],char rezultat[])
 	else
 		strcat(rezultat,"-");
 	strcat(rezultat,")\n");
+
+	strcat(rezultat,"Access: ");
+	strcat(rezultat,time_ttoarray(informatii.st_atime));
+
+	strcat(rezultat,"Modify: ");
+	strcat(rezultat,time_ttoarray(informatii.st_mtime));
+
+	strcat(rezultat,"Change: ");
+	strcat(rezultat,time_ttoarray(informatii.st_ctime));
 }	
 int main(int argc, char* argv[])
 {
