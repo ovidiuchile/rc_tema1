@@ -74,6 +74,13 @@ void myStat(char file_path[],char rezultat[])
 		default: strcat(rezultat,"unkown file type\n"); break;
 	}
 	
+	char sir[50]="";
+	strcat(rezultat,"Device: ");
+	sprintf(sir,"%x",(int)informatii.st_dev);
+	strcat(rezultat,sir);
+	strcat(rezultat,"h/");
+	strcat(rezultat,longlongtoarray((long long)informatii.st_dev));
+	strcat(rezultat,"d\n");
 
 }
 int main(int argc, char* argv[])
