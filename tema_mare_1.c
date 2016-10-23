@@ -71,10 +71,10 @@ void myStat(char file_path[],char rezultat[])
 		case S_IFLNK: strcat(rezultat,"symbolic link\n"); break;
 		case S_IFSOCK:strcat(rezultat,"socket\n");  break;
 		case S_IFIFO: strcat(rezultat,"FIFO/pipe\n"); break;
-		default: break;
+		default: strcat(rezultat,"unkown file type\n"); break;
 	}
 	
-	
+
 }
 int main(int argc, char* argv[])
 {
