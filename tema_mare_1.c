@@ -50,17 +50,17 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,file_path);
 	strcat(rezultat,"'\n");
 
-	strcat(rezultat,"Size: ");
+	strcat(rezultat,"  Size: ");
 	strcat(rezultat,longlongtoarray((long long)informatii.st_size));
-	strcat(rezultat,"\n");
+	strcat(rezultat,"    ");
 
 	strcat(rezultat,"Blocks: ");
 	strcat(rezultat,longlongtoarray((long long)informatii.st_blocks));
-	strcat(rezultat,"\n");
+	strcat(rezultat,"    ");
 
 	strcat(rezultat,"IO Block: ");
 	strcat(rezultat,longlongtoarray((long long)informatii.st_blksize));
-	strcat(rezultat,"\n");
+	strcat(rezultat,"    ");
 
 	switch(informatii.st_mode & S_IFMT)
 	{
@@ -80,16 +80,17 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,sir);
 	strcat(rezultat,"h/");
 	strcat(rezultat,longlongtoarray((long long)informatii.st_dev));
-	strcat(rezultat,"d\n");
+	strcat(rezultat,"d    ");
 
 	strcat(rezultat,"Inode: ");
 	strcat(rezultat, longlongtoarray((long long)informatii.st_ino));
-	strcat(rezultat,"\n");	
+	strcat(rezultat,"    ");	
 
 	strcat(rezultat,"Links: ");
 	strcat(rezultat,longlongtoarray((long long)informatii.st_nlink));
 	strcat(rezultat,"\n");
-           
+    
+    
 }
 int main(int argc, char* argv[])
 {
