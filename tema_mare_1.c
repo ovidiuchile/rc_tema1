@@ -85,7 +85,11 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,"Inode: ");
 	strcat(rezultat, longlongtoarray((long long)informatii.st_ino));
 	strcat(rezultat,"\n");	
-	
+
+	strcat(rezultat,"Links: ");
+	strcat(rezultat,longlongtoarray((long long)informatii.st_nlink));
+	strcat(rezultat,"\n");
+           
 }
 int main(int argc, char* argv[])
 {
