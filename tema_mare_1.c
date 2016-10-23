@@ -16,6 +16,8 @@ char* longlongtoarray(long long numar)
 {
 	char sir[500]="";
 	int k=0,i;
+	if(numar==0)
+		sir[k++]='0';
 	while(numar!=0)
 	{
 		sir[k]=numar%10+'0';
@@ -79,15 +81,15 @@ void myStat(char file_path[],char rezultat[])
 
 	strcat(rezultat,"  Size: ");
 	strcat(rezultat,longlongtoarray((long long)informatii.st_size));
-	strcat(rezultat,"    ");
+	strcat(rezultat,"\t\t");
 
 	strcat(rezultat,"Blocks: ");
 	strcat(rezultat,longlongtoarray((long long)informatii.st_blocks));
-	strcat(rezultat,"    ");
+	strcat(rezultat,"\t   ");
 
 	strcat(rezultat,"IO Block: ");
 	strcat(rezultat,longlongtoarray((long long)informatii.st_blksize));
-	strcat(rezultat,"    ");
+	strcat(rezultat,"   ");
 
 	char file_access[11];
 	switch(informatii.st_mode & S_IFMT)
@@ -98,7 +100,7 @@ void myStat(char file_path[],char rezultat[])
 		case S_IFREG: strcat(rezultat,"regular file\n"); file_access[0]='-' ; break;
 		case S_IFLNK: strcat(rezultat,"symbolic link\n"); file_access[0]='l' ; break;
 		case S_IFSOCK:strcat(rezultat,"socket\n"); file_access[0]='s' ;  break;
-		case S_IFIFO: strcat(rezultat,"FIFO/pipe\n"); file_access[0]='p' ; break;
+		case S_IFIFO: strcat(rezultat,"fifo\n"); file_access[0]='p' ; break;
 		default: strcat(rezultat,"unkown file type\n"); file_access[0]='u' ; break;
 	}
 	
@@ -108,16 +110,16 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,sir);
 	strcat(rezultat,"h/");
 	strcat(rezultat,longlongtoarray((long long)informatii.st_dev));
-	strcat(rezultat,"d    ");
+	strcat(rezultat,"d\t");
 
 	strcat(rezultat,"Inode: ");
 	strcat(rezultat, longlongtoarray((long long)informatii.st_ino));
-	strcat(rezultat,"    ");	
+	strcat(rezultat,"\t   ");	
 
 	strcat(rezultat,"Links: ");
 	strcat(rezultat,longlongtoarray((long long)informatii.st_nlink));
 	strcat(rezultat,"\n");
-    
+
 	strcat(rezultat,"Access: (0");
 	long long octal_access_mode=0;
 	if(informatii.st_mode & S_IRUSR) {file_access[1]='r'; octal_access_mode=octal_access_mode+400;} else file_access[1]='-';
@@ -133,7 +135,7 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,longlongtoarray(octal_access_mode));
 	strcat(rezultat,"/");
 	strcat(rezultat,file_access);
-	strcat(rezultat,")    ");
+	strcat(rezultat,")  ");
 
 	struct passwd *user;
 	user=getpwuid((uid_t)informatii.st_uid);
@@ -144,11 +146,11 @@ void myStat(char file_path[],char rezultat[])
 		strcat(rezultat,user->pw_name);
 	else
 		strcat(rezultat,"-");
-	strcat(rezultat,")    ");
+	strcat(rezultat,")   ");
 
 	struct group *grup;
 	grup=getgrgid((gid_t)informatii.st_gid);
-	strcat(rezultat,"Gid: ( ");
+	strcat(rezultat,"Gid: (  ");
 	strcat(rezultat,longlongtoarray((long long)informatii.st_gid));
 	strcat(rezultat,"/   ");
 	if(grup!=0)
