@@ -167,16 +167,68 @@ void myStat(char file_path[],char rezultat[])
 
 	strcat(rezultat,"Change: ");
 	strcat(rezultat,time_ttoarray(informatii.st_ctime));
-}	
+}
+void special_trim(char sir[])
+{
+	while(sir[0] == ' ')
+		memmove(sir,sir+1,strlen(sir));
+	int k=strlen(sir);
+	while(sir[k-1]==' '&&k>0)
+	{
+		k--;
+		sir[k]='\0';
+	}
+	int i;
+	for(i=1;i<k-1;)
+	{
+		if(sir[i]==' ' && sir[i+1]==' ')
+		{
+			memmove(sir+i,sir+i+1,strlen(sir)-i);
+			k--;
+		}
+		else
+			i++;
+	}
+}
+int count_words(char sir[])
+{
+	int i,count=0,k;
+	k=strlen(sir);
+	for(i=0;i<k;i++)
+		if(sir[i]==' ')
+			count++;
+	if(k!=0) count++;
+	return count;
+}
 int main(int argc, char* argv[])
 {
+	/*
 	if(argc != 2)
 	{
-		printf("%s\n","Comanda stat are nevoie de un argument. Exemplu: \"myStat file.txt\" ");
+		printf("%s\n","Comanda myStat are nevoie de un argument. Exemplu: \"myStat file.txt\" ");
 		exit(1);
 	}
 	char rezultat[2000]="";
 	myStat(argv[1],rezultat);
 	printf("%s",rezultat);
+	*/
+	char sir0[]="12345678901234567890123456789012345678901234567890123456789012345678901234567890\0";
+	char sir1[]="   asd\0";
+	char sir2[]=" asd\0";
+	char sir3[]="as  d asd as  d \0";
+	char sir4[]="a s d \0";
+	char sir5[]=" ";
+	char sir6[]="  asd  \0";
+	char sir7[]=" asd asd asd \0";
+	printf("0%s1%s2%s3%s4%s5%s6%s7\n",sir1,sir2,sir3,sir4,sir5,sir6,sir7);
+	special_trim(sir1);
+	special_trim(sir2);
+	special_trim(sir3);
+	special_trim(sir4);
+	special_trim(sir5);
+	special_trim(sir6);
+	special_trim(sir7);
+	printf("0%s%d%s%d%s%d%s%d%s%d%s%d%s%d\n",sir1,count_words(sir1),sir2,count_words(sir2),sir3,count_words(sir3),sir4,count_words(sir4),sir5,count_words(sir5),sir6,count_words(sir6),sir7,count_words(sir7));
+	
 	return 0;
 }
