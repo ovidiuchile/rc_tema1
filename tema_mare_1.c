@@ -62,17 +62,15 @@ void myStat(char file_path[],char rezultat[])
 
 	if(access(file_path,F_OK)==-1)
 	{
-		perror("");
-		printf("Fisierul \"%s\" nu exista\n",file_path);
-		exit(2);
+		sprintf(rezultat,"Fisierul \"%s\" nu exista\n",file_path);
+		return;
 	}
 
 	struct stat informatii;
 	if(stat(file_path,&informatii)==-1)
 	{
-		perror("");
-		printf("Eroare la utilizarea myStat \"%s\"\n",file_path);
-		exit(3);
+		sprintf(rezultat,"Eroare la utilizarea myStat \"%s\"\n",file_path);
+		return;
 	}
 
 	strcat(rezultat,"  File: `");
@@ -170,10 +168,10 @@ void myStat(char file_path[],char rezultat[])
 }
 void special_trim(char sir[])
 {
-	while(sir[0] == ' ')
+	while(strchr(" \n",sir[0]))
 		memmove(sir,sir+1,strlen(sir));
 	int k=strlen(sir);
-	while(sir[k-1]==' '&&k>0)
+	while(strchr(" \n",sir[k-1])&&k>0)
 	{
 		k--;
 		sir[k]='\0';
@@ -181,7 +179,7 @@ void special_trim(char sir[])
 	int i;
 	for(i=1;i<k-1;)
 	{
-		if(sir[i]==' ' && sir[i+1]==' ')
+		if(strchr(" \n",sir[i]) && strchr(" \n",sir[i+1]))
 		{
 			memmove(sir+i,sir+i+1,strlen(sir)-i);
 			k--;
@@ -195,14 +193,45 @@ int count_words(char sir[])
 	int i,count=0,k;
 	k=strlen(sir);
 	for(i=0;i<k;i++)
-		if(sir[i]==' ')
+		if(strchr(" \n",sir[i]))
 			count++;
 	if(k!=0) count++;
 	return count;
 }
 void manipulate(char sir[])
 {
-	sir[0]='k';
+	if(count_words(sir)!=2)
+		strcpy(sir,"Comanda stat are nevoie de un argument. Exemplu: \"myStat file.txt\"\n");
+	else
+	{
+		char *p, sir2[1000];
+		int count=0;
+		p=strtok(sir,"\n ");
+		while(p)
+		{
+			if (count==0)
+				if(strcmp(sir,"stat")!=0)
+				{
+					strcpy(sir,"Comanda necunoscuta\n");
+					return;
+				}
+				else
+					count++;
+			else
+				if(count==1)
+				{
+					strcpy(sir2,p);
+					count++;
+				}
+				else
+				{
+					strcpy(sir,"Comanda stat are nevoie de un argument. Exemplu: \"myStat file.txt\"\n");
+					exit(21);
+				}
+			p=strtok(NULL,"\n ");
+		}
+		myStat(sir2,sir);
+	}
 }
 int main(int argc, char* argv[])
 {
@@ -228,7 +257,8 @@ int main(int argc, char* argv[])
 	//////////////////////////////////
 
 	int pid,pipefd1[2],pipefd2[2];
-	char sir[2000];
+	char *sir;
+	sir=malloc(2000);
 	while(fgets (sir, 2000, stdin))
 	{
 		special_trim(sir);
@@ -262,99 +292,20 @@ int main(int argc, char* argv[])
 				close(pipefd2[1]);
 				write(pipefd1[1],sir,strlen(sir));
 				int nr=read(pipefd2[0],sir,2000);
-				printf("%d: \n%s",nr-1,sir);
+				sir[nr]='\0';
+				printf("Numar de octeti: %d \n",nr-1);
+				fflush(stdout);
+				if(nr!=0)
+					{printf("%s",sir);fflush(stdout);}
 				close(pipefd1[1]);
 				close(pipefd2[0]);
 				wait(NULL);
 			}
 		}
+		free(sir);
+		sir=malloc(2000);
 		
 	}
 
-
-
-
-
-	/*
-	if(-1 == write(pipefd1[1],sir,strlen(sir)))
-		{
-			printf("Eroare la write in pipe1: \"%s\"\n",sir);
-			exit(4);
-		}
-		int byte_count;
-		if(0 == (byte_count=read(pipefd2[0],sir,2000)))
-		{
-			perror("read din pipe2");
-			exit(6);
-		}
-		printf("Numar de octeti: %d\n%s",byte_count,sir);
-	if(-1 == pipe(pipefd1)) //tata->fiu
-	{
-		perror("pipe1");
-		exit(2);
-	}
-	if(-1 == pipe(pipefd2)) //fiu->tata
-	{
-		perror("pipe2");
-		exit(3);
-	}
-	switch(pid=fork())
-	{
-		case -1:
-		{
-			//eroare
-			printf("Eroare la fork\n");
-			exit(1);
-		}
-		case 0:
-		{
-			//in fiu
-			close(pipefd1[1]);
-			close(pipefd2[0]);
-			char sir[2000];
-			while(0 != read(pipefd1[0],sir,2000))
-			{
-				manipulate(sir);
-				if(-1 == write(pipefd2[1],sir,strlen(sir)))
-				{
-					perror("write in pipe2");
-					exit(5);
-				}
-			}
-
-			close(pipefd1[0]);
-			close(pipefd2[1]);
-			break;
-		}
-		default:
-		{
-			//in tata
-			close(pipefd1[0]);
-			close(pipefd2[1]);
-			char sir[2000];
-			while(0 != read(0,sir,2000))
-			{
-				special_trim(sir);
-				if(-1 == write(pipefd1[1],sir,strlen(sir)))
-				{
-					printf("Eroare la write in pipe1: \"%s\"\n",sir);
-					exit(4);
-				}
-				int byte_count;
-				if(0 == (byte_count=read(pipefd2[0],sir,2000)))
-				{
-					perror("read din pipe2");
-					exit(6);
-				}
-				printf("Numar de octeti: %d\n%s",byte_count,sir);
-
-			}
-
-			close(pipefd1[1]);
-			close(pipefd2[0]);
-			break;
-		}
-	}
-	*/
 	return 0;
 }
