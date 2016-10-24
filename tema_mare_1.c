@@ -202,9 +202,7 @@ int count_words(char sir[])
 }
 void manipulate(char sir[])
 {
-	int i,k=strlen(sir);
-	for(i=0;i<k;i++)
-		sir[i]++;
+	sir[0]='k';
 }
 int main(int argc, char* argv[])
 {
@@ -230,6 +228,66 @@ int main(int argc, char* argv[])
 	//////////////////////////////////
 
 	int pid,pipefd1[2],pipefd2[2];
+	char sir[2000];
+	while(fgets (sir, 2000, stdin))
+	{
+		special_trim(sir);
+		if(-1 == pipe(pipefd1)) //tata->fiu
+		{
+			perror("pipe1");
+			exit(2);
+		}
+		if(-1 == pipe(pipefd2)) //fiu->tata
+		{
+			perror("pipe2");
+			exit(3);
+		}
+		switch(fork())
+		{
+			case -1:printf("eroare la fork"); exit(1);
+			case 0:
+			{
+				close(pipefd1[1]);
+				close(pipefd2[0]);
+				read(pipefd1[0],sir,2000);
+				manipulate(sir);
+				write(pipefd2[1],sir,strlen(sir));
+				close(pipefd1[0]);
+				close(pipefd2[1]);
+				exit(0);
+			}
+			default:
+			{
+				close(pipefd1[0]);
+				close(pipefd2[1]);
+				write(pipefd1[1],sir,strlen(sir));
+				int nr=read(pipefd2[0],sir,2000);
+				printf("%d: \n%s",nr-1,sir);
+				close(pipefd1[1]);
+				close(pipefd2[0]);
+				wait(NULL);
+			}
+		}
+		
+	}
+
+
+
+
+
+	/*
+	if(-1 == write(pipefd1[1],sir,strlen(sir)))
+		{
+			printf("Eroare la write in pipe1: \"%s\"\n",sir);
+			exit(4);
+		}
+		int byte_count;
+		if(0 == (byte_count=read(pipefd2[0],sir,2000)))
+		{
+			perror("read din pipe2");
+			exit(6);
+		}
+		printf("Numar de octeti: %d\n%s",byte_count,sir);
 	if(-1 == pipe(pipefd1)) //tata->fiu
 	{
 		perror("pipe1");
@@ -240,7 +298,7 @@ int main(int argc, char* argv[])
 		perror("pipe2");
 		exit(3);
 	}
-	switch(fork())
+	switch(pid=fork())
 	{
 		case -1:
 		{
@@ -279,7 +337,7 @@ int main(int argc, char* argv[])
 				special_trim(sir);
 				if(-1 == write(pipefd1[1],sir,strlen(sir)))
 				{
-					printf("Eroare la write in pipe: \"%s\"\n",sir);
+					printf("Eroare la write in pipe1: \"%s\"\n",sir);
 					exit(4);
 				}
 				int byte_count;
@@ -297,5 +355,6 @@ int main(int argc, char* argv[])
 			break;
 		}
 	}
+	*/
 	return 0;
 }
