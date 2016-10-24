@@ -200,6 +200,12 @@ int count_words(char sir[])
 	if(k!=0) count++;
 	return count;
 }
+void manipulate(char sir[])
+{
+	int i,k=strlen(sir);
+	for(i=0;i<k;i++)
+		sir[i]++;
+}
 int main(int argc, char* argv[])
 {
 	/*
@@ -212,23 +218,84 @@ int main(int argc, char* argv[])
 	myStat(argv[1],rezultat);
 	printf("%s",rezultat);
 	*/
-	char sir0[]="12345678901234567890123456789012345678901234567890123456789012345678901234567890\0";
-	char sir1[]="   asd\0";
-	char sir2[]=" asd\0";
-	char sir3[]="as  d asd as  d \0";
-	char sir4[]="a s d \0";
-	char sir5[]=" ";
-	char sir6[]="  asd  \0";
-	char sir7[]=" asd asd asd \0";
-	printf("0%s1%s2%s3%s4%s5%s6%s7\n",sir1,sir2,sir3,sir4,sir5,sir6,sir7);
-	special_trim(sir1);
-	special_trim(sir2);
-	special_trim(sir3);
-	special_trim(sir4);
-	special_trim(sir5);
-	special_trim(sir6);
-	special_trim(sir7);
-	printf("0%s%d%s%d%s%d%s%d%s%d%s%d%s%d\n",sir1,count_words(sir1),sir2,count_words(sir2),sir3,count_words(sir3),sir4,count_words(sir4),sir5,count_words(sir5),sir6,count_words(sir6),sir7,count_words(sir7));
 	
+	/////////////////////////////////
+
+	/*char sir[2000];
+	while(0 != read(0,sir,2000))
+	{
+		printf("bla\n");
+	}*/
+
+	//////////////////////////////////
+
+	int pid,pipefd1[2],pipefd2[2];
+	if(-1 == pipe(pipefd1)) //tata->fiu
+	{
+		perror("pipe1");
+		exit(2);
+	}
+	if(-1 == pipe(pipefd2)) //fiu->tata
+	{
+		perror("pipe2");
+		exit(3);
+	}
+	switch(fork())
+	{
+		case -1:
+		{
+			//eroare
+			printf("Eroare la fork\n");
+			exit(1);
+		}
+		case 0:
+		{
+			//in fiu
+			close(pipefd1[1]);
+			close(pipefd2[0]);
+			char sir[2000];
+			while(0 != read(pipefd1[0],sir,2000))
+			{
+				manipulate(sir);
+				if(-1 == write(pipefd2[1],sir,strlen(sir)))
+				{
+					perror("write in pipe2");
+					exit(5);
+				}
+			}
+
+			close(pipefd1[0]);
+			close(pipefd2[1]);
+			break;
+		}
+		default:
+		{
+			//in tata
+			close(pipefd1[0]);
+			close(pipefd2[1]);
+			char sir[2000];
+			while(0 != read(0,sir,2000))
+			{
+				special_trim(sir);
+				if(-1 == write(pipefd1[1],sir,strlen(sir)))
+				{
+					printf("Eroare la write in pipe: \"%s\"\n",sir);
+					exit(4);
+				}
+				int byte_count;
+				if(0 == (byte_count=read(pipefd2[0],sir,2000)))
+				{
+					perror("read din pipe2");
+					exit(6);
+				}
+				printf("Numar de octeti: %d\n%s",byte_count,sir);
+
+			}
+
+			close(pipefd1[1]);
+			close(pipefd2[0]);
+			break;
+		}
+	}
 	return 0;
 }
