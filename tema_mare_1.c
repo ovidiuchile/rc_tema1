@@ -265,6 +265,11 @@ int main(int argc, char* argv[])
 			int nrBytes;
 			close(pipefd1[1]);
 			close(pipefd2[0]);
+
+			//citire user din tata
+			//verificare daca exista user
+			//trimitere raspuns catre tata daca exista user
+
 			while(0!= (nrBytes=read(pipefd1[0],sirDinFiu,2000)))
 			{
 				sirDinFiu[nrBytes]='\0';
@@ -279,9 +284,31 @@ int main(int argc, char* argv[])
 		{
 			close(pipefd1[0]);
 			close(pipefd2[1]);
+			printf("login as: ");
+			int ok,i;
 			while(fgets(sir,2000,stdin))
 			{
-				int i=0,ok=0;
+				ok=0;
+				for(i=0;i<strlen(sir);i++)
+					if(!strchr(" \n",sir[i]))
+						ok=1;
+				if(ok==0)
+					printf("Introduceti userul\nlogin as: ");
+				else
+				{
+					special_trim(sir);
+					write(pipefd1[1],sir,strlen(sir));
+					read(pipefd2[0],&ok,sizeof(int));
+					if(ok==1)
+						break;
+					else
+						printf("User inexistent\nlogin as: ");
+				}
+			}
+			while(fgets(sir,2000,stdin))
+			{
+				i=0;
+				ok=0;
 				for(i=0;i<strlen(sir);i++)
 					if(!strchr(" \n",sir[i]))
 						ok=1;
