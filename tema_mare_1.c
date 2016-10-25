@@ -299,13 +299,13 @@ int main(int argc, char* argv[])
 			close(pipefd2[1]);
 			while(fgets(sir,2000,stdin))
 			{
-				special_trim(sir);
 				int i=0,ok=0;
 				for(i=0;i<strlen(sir);i++)
 					if(!strchr(" \n",sir[i]))
 						ok=1;
-				if(ok)
+				if(ok==1)
 				{
+					special_trim(sir);
 					write(pipefd1[1],sir,strlen(sir));
 					int nr=read(pipefd2[0],sir,2000);
 					sir[nr]='\0';
