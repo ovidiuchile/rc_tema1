@@ -204,40 +204,32 @@ int count_words(char sir[]) //self-explanatory
 void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, "sir" primind dupa
 							//apelul manipulate(sir);rezultatul ce va fi apoi trimis catre parinte 
 {
-	if(count_words(sir)!=2)
+	if(count_words(sir)>5||count_words(sir)==0)
 	{
-		strcpy(sir,"Comanda stat are nevoie de un argument. Exemplu: \"myStat file.txt\"");
+		strcpy(sir,"Comanda necunoscuta");
 	}
 	else	//determinarea comenzii ce va trebui folosita
 	{
-		char *p, sir2[1000];	
+		char *p, sir2[1000],cuvinte[6][100];	
 		int count=0;
 		p=strtok(sir,"\n ");
 		while(p)
 		{
-			if (count==0)
-				if(strcmp(sir,"stat")!=0)
-				{
-					strcpy(sir,"Comanda necunoscuta");
-					return;
-				}
-				else
-					count++;
-			else
-				if(count==1)
-				{
-					strcpy(sir2,p);
-					count++;
-				}
-				else
-				{
-					printf("||%s||\n",sir);
-					strcpy(sir,"Comanda stat are nevoie de un argument. Exemplu: \"myStat file.txt\"");
-					return;
-				}
+			strcpy(cuvinte[count],p);
+			count++;
 			p=strtok(NULL,"\n ");
 		}
-		myStat(sir2,sir);
+
+		if(strcmp(cuvinte[0],"stat")==0)
+			if(count==2)
+				myStat(cuvinte[1],sir);
+			else
+				strcpy(sir,"Comanda stat are nevoie de un argument. Exemplu: \"myStat file.txt\"");
+		else if(strcmp(cuvinte[0],"quit")==0)
+			if(count!=1)
+				strcpy(sir,"Did you mean 'quit'?");
+			else{}
+		else strcpy(sir,"Unkown command");
 	}
 }
 int main(int argc, char* argv[])
@@ -261,20 +253,52 @@ int main(int argc, char* argv[])
 		case -1:printf("eroare la fork"); exit(1);		//eroare
 		case 0:		//procesul fiu
 		{
-			char sirDinFiu[2000];
-			int nrBytes;
+			char sirDinFiu[2000],users[200];
+			int fd,nrBytes,ok=0;
 			close(pipefd1[1]);
 			close(pipefd2[0]);
 
 			//citire user din tata
-			//verificare daca exista user
-			//trimitere raspuns catre tata daca exista user
-
+			while(1)
+			{
+				nrBytes=read(pipefd1[0],&sirDinFiu,2000);
+				sirDinFiu[nrBytes]='\0';
+				//verificare daca exista user
+				if(-1 == (fd=open("users.txt",O_RDONLY)))
+				{
+					perror("users.txt");
+					ok=2;
+					write(pipefd2[1],&ok,sizeof(int));
+					exit(30);
+				}
+				read(fd,users,200);
+				ok=0;
+				char *p;
+				p=strtok(users,"\n ");
+				while(p)
+				{
+					//printf("123%s123",p);
+					fflush(stdout);
+					if(strcmp(p,sirDinFiu)==0)
+					{
+						ok=1;
+						break;
+					}
+					p=strtok(NULL,"\n ");
+				}
+				close(fd);
+				//trimitere raspuns catre tata daca exista user
+				write(pipefd2[1],&ok,sizeof(int));
+				if(ok==1)
+					break;
+			}
 			while(0!= (nrBytes=read(pipefd1[0],sirDinFiu,2000)))
 			{
 				sirDinFiu[nrBytes]='\0';
 				manipulate(sirDinFiu);
 				write(pipefd2[1],sirDinFiu,strlen(sirDinFiu));
+				if(strcmp(sirDinFiu,"quit")==0) 
+					break;
 			}
 			close(pipefd1[0]);
 			close(pipefd2[1]);
@@ -285,7 +309,7 @@ int main(int argc, char* argv[])
 			close(pipefd1[0]);
 			close(pipefd2[1]);
 			printf("login as: ");
-			int ok,i;
+			int ok,i,nr;
 			while(fgets(sir,2000,stdin))
 			{
 				ok=0;
@@ -298,13 +322,19 @@ int main(int argc, char* argv[])
 				{
 					special_trim(sir);
 					write(pipefd1[1],sir,strlen(sir));
-					read(pipefd2[0],&ok,sizeof(int));
+					nr=read(pipefd2[0],&ok,sizeof(int));
+					printf("Numar de octeti primiti: %d \n",sizeof(int));
+					fflush(stdout);
 					if(ok==1)
 						break;
-					else
-						printf("User inexistent\nlogin as: ");
+					else if(ok==2)
+							exit(30);
+						 else
+							printf("User inexistent\nlogin as: ");
 				}
 			}
+			printf("Access granted!\n");
+			fflush(stdout);
 			while(fgets(sir,2000,stdin))
 			{
 				i=0;
@@ -316,12 +346,17 @@ int main(int argc, char* argv[])
 				{
 					special_trim(sir);
 					write(pipefd1[1],sir,strlen(sir));
-					int nr=read(pipefd2[0],sir,2000);
+					nr=read(pipefd2[0],sir,2000);
 					sir[nr]='\0';
-					printf("Numar de octeti primiti: %d \n",nr-1);
+					printf("Numar de octeti primiti: %d \n",nr);
 					fflush(stdout);
 					if(nr!=0)
-						{printf("%s\n",sir);fflush(stdout);}
+					{
+						if(strcmp(sir,"quit")==0) 
+							break;
+						printf("%s\n",sir);
+						fflush(stdout);
+					}
 					free(sir);
 					sir=malloc(2000);	
 				}
