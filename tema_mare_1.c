@@ -54,7 +54,7 @@ char* time_ttoarray(time_t timp)
   	struct tm t;
   	localtime_r(&abc, &t);
   	strcat(sir,longlongtoarray(t.tm_gmtoff/3600));
-	strcat(sir,"00\n");
+	strcat(sir,"00");
 
 }
 void myStat(char file_path[],char rezultat[])
@@ -62,14 +62,14 @@ void myStat(char file_path[],char rezultat[])
 
 	if(access(file_path,F_OK)==-1)
 	{
-		sprintf(rezultat,"Fisierul \"%s\" nu exista\n",file_path);
+		sprintf(rezultat,"Fisierul \"%s\" nu exista",file_path);
 		return;
 	}
 
 	struct stat informatii;
 	if(stat(file_path,&informatii)==-1)
 	{
-		sprintf(rezultat,"Eroare la utilizarea myStat \"%s\"\n",file_path);
+		sprintf(rezultat,"Eroare la utilizarea myStat \"%s\"",file_path);
 		return;
 	}
 
@@ -159,9 +159,11 @@ void myStat(char file_path[],char rezultat[])
 
 	strcat(rezultat,"Access: ");
 	strcat(rezultat,time_ttoarray(informatii.st_atime));
+	strcat(rezultat,"\n");
 
 	strcat(rezultat,"Modify: ");
 	strcat(rezultat,time_ttoarray(informatii.st_mtime));
+	strcat(rezultat,"\n");
 
 	strcat(rezultat,"Change: ");
 	strcat(rezultat,time_ttoarray(informatii.st_ctime));
@@ -201,7 +203,9 @@ int count_words(char sir[])
 void manipulate(char sir[])
 {
 	if(count_words(sir)!=2)
-		strcpy(sir,"Comanda stat are nevoie de un argument. Exemplu: \"myStat file.txt\"\n");
+	{
+		strcpy(sir,"Comanda stat are nevoie de un argument. Exemplu: \"myStat file.txt\"");
+	}
 	else
 	{
 		char *p, sir2[1000];
@@ -212,7 +216,7 @@ void manipulate(char sir[])
 			if (count==0)
 				if(strcmp(sir,"stat")!=0)
 				{
-					strcpy(sir,"Comanda necunoscuta\n");
+					strcpy(sir,"Comanda necunoscuta");
 					return;
 				}
 				else
@@ -225,8 +229,9 @@ void manipulate(char sir[])
 				}
 				else
 				{
-					strcpy(sir,"Comanda stat are nevoie de un argument. Exemplu: \"myStat file.txt\"\n");
-					exit(21);
+					printf("||%s||\n",sir);
+					strcpy(sir,"Comanda stat are nevoie de un argument. Exemplu: \"myStat file.txt\"");
+					return;
 				}
 			p=strtok(NULL,"\n ");
 		}
@@ -259,53 +264,62 @@ int main(int argc, char* argv[])
 	int pid,pipefd1[2],pipefd2[2];
 	char *sir;
 	sir=malloc(2000);
-	while(fgets (sir, 2000, stdin))
+	if(-1 == pipe(pipefd1)) //tata->fiu
 	{
-		special_trim(sir);
-		if(-1 == pipe(pipefd1)) //tata->fiu
-		{
-			perror("pipe1");
-			exit(2);
-		}
-		if(-1 == pipe(pipefd2)) //fiu->tata
-		{
-			perror("pipe2");
-			exit(3);
-		}
-		switch(fork())
-		{
-			case -1:printf("eroare la fork"); exit(1);
+		perror("pipe1");
+		exit(2);
+	}
+	if(-1 == pipe(pipefd2)) //fiu->tata
+	{
+		perror("pipe2");
+		exit(3);
+	}
+	switch(pid=fork())
+	{
+		case -1:printf("eroare la fork"); exit(1);
 			case 0:
 			{
+				char sirDinFiu[2000];
+				int nrBytes;
 				close(pipefd1[1]);
 				close(pipefd2[0]);
-				read(pipefd1[0],sir,2000);
-				manipulate(sir);
-				write(pipefd2[1],sir,strlen(sir));
+				while(0!= (nrBytes=read(pipefd1[0],sirDinFiu,2000)))
+				{
+					sirDinFiu[nrBytes]='\0';
+					manipulate(sirDinFiu);
+					write(pipefd2[1],sirDinFiu,strlen(sirDinFiu));
+				}
 				close(pipefd1[0]);
 				close(pipefd2[1]);
 				exit(0);
 			}
-			default:
+		default:
+		{
+			close(pipefd1[0]);
+			close(pipefd2[1]);
+			while(fgets(sir,2000,stdin))
 			{
-				close(pipefd1[0]);
-				close(pipefd2[1]);
-				write(pipefd1[1],sir,strlen(sir));
-				int nr=read(pipefd2[0],sir,2000);
-				sir[nr]='\0';
-				printf("Numar de octeti: %d \n",nr-1);
-				fflush(stdout);
-				if(nr!=0)
-					{printf("%s",sir);fflush(stdout);}
-				close(pipefd1[1]);
-				close(pipefd2[0]);
-				wait(NULL);
+				special_trim(sir);
+				int i=0,ok=0;
+				for(i=0;i<strlen(sir);i++)
+					if(!strchr(" \n",sir[i]))
+						ok=1;
+				if(ok)
+				{
+					write(pipefd1[1],sir,strlen(sir));
+					int nr=read(pipefd2[0],sir,2000);
+					sir[nr]='\0';
+					printf("Numar de octeti: %d \n",nr-1);
+					fflush(stdout);
+					if(nr!=0)
+						{printf("%s\n",sir);fflush(stdout);}
+					free(sir);
+					sir=malloc(2000);	
+				}
 			}
+			close(pipefd1[1]);
+			close(pipefd2[0]);
 		}
-		free(sir);
-		sir=malloc(2000);
-		
 	}
-
 	return 0;
 }
