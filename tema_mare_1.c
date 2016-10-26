@@ -10,8 +10,9 @@
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
+#include <dirent.h>
 
-
+#define MAX_CHAR_SIZE 10000
 char* longlongtoarray(long long numar)
 {
 	char sir[500]="";
@@ -96,8 +97,8 @@ void myStat(char file_path[],char rezultat[])
 		case S_IFDIR: strcat(rezultat,"directory\n"); file_access[0]='d';break;
 		case S_IFCHR: strcat(rezultat,"character-oriented device file\n"); file_access[0]='c' ; break;
 		case S_IFBLK: strcat(rezultat,"block-oriented device file\n"); file_access[0]='b' ; break;
-		case S_IFREG: strcat(rezultat,"regular file\n"); file_access[0]='-' ; break;
 		case S_IFLNK: strcat(rezultat,"symbolic link\n"); file_access[0]='l' ; break;
+		case S_IFREG: strcat(rezultat,"regular file\n"); file_access[0]='-' ; break;
 		case S_IFSOCK:strcat(rezultat,"socket\n"); file_access[0]='s' ;  break;
 		case S_IFIFO: strcat(rezultat,"fifo\n"); file_access[0]='p' ; break;
 		default: strcat(rezultat,"unkown file type\n"); file_access[0]='u' ; break;
@@ -201,6 +202,103 @@ int count_words(char sir[]) //self-explanatory
 	if(k!=0) count++;
 	return count;
 }
+void directoryRecursion(char path[], char file_name[],char rezultat[])
+{
+	struct dirent *entry;
+	DIR *directory;
+	directory=opendir(path);
+	char newp[256];
+	struct stat informatii;
+	while(entry=readdir(directory))
+	{
+		int i,ok=1,k,l;
+		k=strlen(file_name);
+		l=strlen(entry->d_name);
+
+		if(k!=l)
+			ok=0;
+		if(ok) 
+			for(i=0;i<k;i++)
+				if(file_name[i]!=entry->d_name[i])
+					if(file_name[i]!='?')
+						ok=0;
+		
+		strcpy(newp,path);
+		strcat(newp,"/");
+		strcat(newp,entry->d_name);
+		stat(newp,&informatii);
+		if(ok==1)
+		{
+			strcat(rezultat,"\n");
+			strcat(rezultat,newp);
+			
+			strcat(rezultat,"\n    File type: ");
+			char file_access[11];
+			switch(informatii.st_mode & S_IFMT)		////file_access[0] va fi folosit la informatiile despre accesul la fisier
+			{
+				case S_IFDIR: strcat(rezultat,"directory\n"); file_access[0]='d';break;
+				case S_IFCHR: strcat(rezultat,"character-oriented device file\n"); file_access[0]='c' ; break;
+				case S_IFBLK: strcat(rezultat,"block-oriented device file\n"); file_access[0]='b' ; break;
+				case S_IFLNK: strcat(rezultat,"symbolic link\n"); file_access[0]='l' ; break;
+				case S_IFREG: strcat(rezultat,"regular file\n"); file_access[0]='-' ; break;
+				case S_IFSOCK:strcat(rezultat,"socket\n"); file_access[0]='s' ;  break;
+				case S_IFIFO: strcat(rezultat,"fifo\n"); file_access[0]='p' ; break;
+				default: strcat(rezultat,"unkown file type\n"); file_access[0]='u' ; break;
+			}
+
+			strcat(rezultat,"  Last change: ");	//Data ultimei schimbari -- deoarece
+												//data crearii nu este disponibila i.e. nu poate fi determinata
+			strcat(rezultat,time_ttoarray(informatii.st_ctime));
+
+			strcat(rezultat,"\n  Last modify: ");	//Data ultimei modificari
+			strcat(rezultat,time_ttoarray(informatii.st_mtime));
+
+			strcat(rezultat,"\n  Last access: ");	//Data ultimei accesari
+			strcat(rezultat,time_ttoarray(informatii.st_atime));
+
+			strcat(rezultat,"\nSize in bytes: "); //dimensiunea fisierului
+			strcat(rezultat,longlongtoarray((long long)informatii.st_size));
+
+			strcat(rezultat,"\n  File access: (0");  //informatiile despre accesul la fisier
+			long long octal_access_mode=0;  //va fi folosit la informatiile in octal	
+			if(informatii.st_mode & S_IRUSR) {file_access[1]='r'; octal_access_mode=octal_access_mode+400;} else file_access[1]='-';
+			if(informatii.st_mode & S_IWUSR) {file_access[2]='w'; octal_access_mode=octal_access_mode+200;} else file_access[2]='-';
+			if(informatii.st_mode & S_IXUSR) {file_access[3]='x'; octal_access_mode=octal_access_mode+100;} else file_access[3]='-';
+			if(informatii.st_mode & S_IRGRP) {file_access[4]='r'; octal_access_mode=octal_access_mode+ 40;} else file_access[4]='-';
+			if(informatii.st_mode & S_IWGRP) {file_access[5]='w'; octal_access_mode=octal_access_mode+ 20;} else file_access[5]='-';
+			if(informatii.st_mode & S_IXGRP) {file_access[6]='x'; octal_access_mode=octal_access_mode+ 10;} else file_access[6]='-';
+			if(informatii.st_mode & S_IROTH) {file_access[7]='r'; octal_access_mode=octal_access_mode+  4;} else file_access[7]='-';
+			if(informatii.st_mode & S_IWOTH) {file_access[8]='w'; octal_access_mode=octal_access_mode+  2;} else file_access[8]='-';
+			if(informatii.st_mode & S_IXOTH) {file_access[9]='x'; octal_access_mode=octal_access_mode+  1;} else file_access[9]='-';
+			file_access[10]='\0';
+			strcat(rezultat,longlongtoarray(octal_access_mode)); //informatiile in octal
+			strcat(rezultat,"/");
+			strcat(rezultat,file_access);
+			strcat(rezultat,")  ");
+			strcat(rezultat,"\n");
+		}
+		if(strcmp(entry->d_name,"..")!=0 && strcmp(entry->d_name,".")!=0)
+			if(S_ISDIR(informatii.st_mode))
+				directoryRecursion(newp,file_name,rezultat);
+	}
+	closedir(directory);
+}
+void myFind(char path[], char file_name[], char rezultat[])
+{
+	strcpy(rezultat,"");
+	DIR *directory;
+	directory=opendir(path);
+	if(directory)
+	{
+		closedir(directory);
+		directoryRecursion(path,file_name,rezultat);
+	}
+	else
+	{
+		sprintf(rezultat,"Eroare la deschiderea %s",path);
+	}
+}
+
 void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, "sir" primind dupa
 							//apelul manipulate(sir);rezultatul ce va fi apoi trimis catre parinte 
 {
@@ -224,11 +322,26 @@ void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, 
 			if(count==2)
 				myStat(cuvinte[1],sir);
 			else
-				strcpy(sir,"Comanda stat are nevoie de un argument. Exemplu: \"myStat file.txt\"");
+				strcpy(sir,"Comanda stat are nevoie de un argument. Exemplu: \"stat file.txt\"");
 		else if(strcmp(cuvinte[0],"quit")==0)
 			if(count!=1)
 				strcpy(sir,"Did you mean 'quit'?");
 			else{}
+		else if(strcmp(cuvinte[0],"find")==0)
+			if(count==3)
+			{
+				myFind(cuvinte[1],cuvinte[2],sir);
+				if(strcmp(sir,"")==0)
+					strcpy(sir,"Niciun rezultat");
+			}
+			else if(count==2)
+			{
+				myFind(".",cuvinte[1],sir);
+				if(strcmp(sir,"")==0)
+					strcpy(sir,"Niciun rezultat");
+			}
+				else
+					strcpy(sir,"Comanda find are nevoie de 1 sau 2 argumente. Exemplu: \"find path ceva.cpp\"");
 		else strcpy(sir,"Unkown command");
 	}
 }
@@ -237,7 +350,7 @@ int main(int argc, char* argv[])
 		
 	int pid,pipefd1[2],pipefd2[2];
 	char *sir;
-	sir=malloc(2000);
+	sir=malloc(MAX_CHAR_SIZE);
 	if(-1 == pipe(pipefd1)) //tata->fiu
 	{
 		perror("pipe1");
@@ -253,7 +366,7 @@ int main(int argc, char* argv[])
 		case -1:printf("eroare la fork"); exit(1);		//eroare
 		case 0:		//procesul fiu
 		{
-			char sirDinFiu[2000],users[200];
+			char sirDinFiu[MAX_CHAR_SIZE],users[200];
 			int fd,nrBytes,ok=0;
 			close(pipefd1[1]);
 			close(pipefd2[0]);
@@ -261,7 +374,7 @@ int main(int argc, char* argv[])
 			//citire user din tata
 			while(1)
 			{
-				nrBytes=read(pipefd1[0],&sirDinFiu,2000);
+				nrBytes=read(pipefd1[0],&sirDinFiu,MAX_CHAR_SIZE);
 				sirDinFiu[nrBytes]='\0';
 				//verificare daca exista user
 				if(-1 == (fd=open("users.txt",O_RDONLY)))
@@ -292,7 +405,7 @@ int main(int argc, char* argv[])
 				if(ok==1)
 					break;
 			}
-			while(0!= (nrBytes=read(pipefd1[0],sirDinFiu,2000)))
+			while(0!= (nrBytes=read(pipefd1[0],sirDinFiu,MAX_CHAR_SIZE)))
 			{
 				sirDinFiu[nrBytes]='\0';
 				manipulate(sirDinFiu);
@@ -310,7 +423,7 @@ int main(int argc, char* argv[])
 			close(pipefd2[1]);
 			printf("login as: ");
 			int ok,i,nr;
-			while(fgets(sir,2000,stdin))
+			while(fgets(sir,MAX_CHAR_SIZE,stdin))
 			{
 				ok=0;
 				for(i=0;i<strlen(sir);i++)
@@ -333,9 +446,14 @@ int main(int argc, char* argv[])
 							printf("User inexistent\nlogin as: ");
 				}
 			}
-			printf("Access granted!\n");
+			printf("%s\n\n","Access granted!");
+			printf("%s\n","Comenzi disponibile:");
+			printf("%s\n","Comanda stat are nevoie de un argument. Exemplu: \"stat file.txt\".");
+			printf("%s\n","Comanda find are nevoie de 1 sau 2 argumente. Exemplu: \"find path ceva.cpp\".");
+			printf("%s\n","  Al doilea argument accepta caracterul '?', inlocuind un singur caracter,\n  oricare ar fi acela." );
+			printf("%s\n\n","Comanda quit nu are argumente.");
 			fflush(stdout);
-			while(fgets(sir,2000,stdin))
+			while(fgets(sir,MAX_CHAR_SIZE,stdin))
 			{
 				i=0;
 				ok=0;
@@ -346,7 +464,7 @@ int main(int argc, char* argv[])
 				{
 					special_trim(sir);
 					write(pipefd1[1],sir,strlen(sir));
-					nr=read(pipefd2[0],sir,2000);
+					nr=read(pipefd2[0],sir,MAX_CHAR_SIZE);
 					sir[nr]='\0';
 					printf("Numar de octeti primiti: %d \n",nr);
 					fflush(stdout);
@@ -358,7 +476,7 @@ int main(int argc, char* argv[])
 						fflush(stdout);
 					}
 					free(sir);
-					sir=malloc(2000);	
+					sir=malloc(MAX_CHAR_SIZE);	
 				}
 			}
 			close(pipefd1[1]);
