@@ -347,43 +347,64 @@ void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, 
 }
 int main(int argc, char* argv[])
 {
-	char communication_type[256];//1-pipe,2-fifo,3-socket,everything else-nothing
-	printf("%s\n", "Alegeti tipul de comunicare dorit: 1-pipe,2-fifo,3-socket");
+	int communication_type;
+	char communication_type_string[256];//1-pipe,2-fifo,3-socket,everything else-nothing
+	printf("%s\n", "Alegeti tipul de comunicare dorit: 1-pipe, 2-fifo, 3-socket.");
 	while(1)
 	{
-		fgets(communication_type,256,stdin);
+		fgets(communication_type_string,256,stdin);
 		int ok=0,i;
-		for(i=0;i<strlen(communication_type);i++)
-			if(!strchr(" \n",communication_type[i]))
+		for(i=0;i<strlen(communication_type_string);i++)
+			if(!strchr(" \n",communication_type_string[i]))
 				ok=1;
 		if(ok)
 		{
-			special_trim(communication_type);
-			if(strcmp(communication_type,"1")==0)
-				{printf("%s","Ati ales pipe.\n");break;}
+			special_trim(communication_type_string);
+			if(strcmp(communication_type_string,"1")==0)
+				{printf("%s","Ati ales pipe.\n");communication_type=1;break;}
 			else 
-				if(strcmp(communication_type,"2")==0)
-					{printf("%s","Ati ales fifo.\n");break;}
+				if(strcmp(communication_type_string,"2")==0)
+					{printf("%s","Ati ales fifo.\n");communication_type=2;break;}
 				else
-					if(strcmp(communication_type,"3")==0)
-						{printf("%s","Ati ales socket.\n");break;}
+					if(strcmp(communication_type_string,"3")==0)
+						{printf("%s","Ati ales socket.\n");communication_type=3;break;}
 					else
-						printf("%s","???\n");
+						if(strcmp(communication_type_string,"quit")==0)
+							exit(0);
+						else
+							printf("%s","Invalid command. Type quit if you want to exit myConsole.\n");
 		}
 	}
 	fflush(stdout);
 	int pid,pipefd1[2],pipefd2[2];
 	char *sir;
 	sir=malloc(MAX_CHAR_SIZE);
-	if(-1 == pipe(pipefd1)) //tata->fiu
+	switch(communication_type)
 	{
-		perror("pipe1");
-		exit(2);
-	}
-	if(-1 == pipe(pipefd2)) //fiu->tata
-	{
-		perror("pipe2");
-		exit(3);
+		case 1:
+		{
+			if(-1 == pipe(pipefd1)) //tata->fiu
+			{
+				perror("pipe1");
+				exit(2);
+			}
+			if(-1 == pipe(pipefd2)) //fiu->tata
+			{
+				perror("pipe2");
+				exit(3);
+			}
+			break;
+		}
+		case 2:
+		{
+			//mknod
+			break;
+		}
+		case 3:
+		{
+			//socket
+			break;
+		}
 	}
 	switch(pid=fork())		//fork
 	{
@@ -392,20 +413,56 @@ int main(int argc, char* argv[])
 		{
 			char sirDinFiu[MAX_CHAR_SIZE],users[200];
 			int fd,nrBytes,ok=0;
-			close(pipefd1[1]);
-			close(pipefd2[0]);
+			if(communication_type==1)
+			{
+				close(pipefd1[1]);
+				close(pipefd2[0]);
+			}
 
 			//citire user din tata
 			while(1)
 			{
-				nrBytes=read(pipefd1[0],&sirDinFiu,MAX_CHAR_SIZE);
+				switch(communication_type)
+				{
+					case 1:
+					{
+						nrBytes=read(pipefd1[0],&sirDinFiu,MAX_CHAR_SIZE);
+					}
+					case 2:
+					{
+
+						break;
+					}
+					case 3:
+					{
+
+						break;
+					}
+				}
 				sirDinFiu[nrBytes]='\0';
 				//verificare daca exista user
 				if(-1 == (fd=open("users.txt",O_RDONLY)))
 				{
 					perror("users.txt");
 					ok=2;
-					write(pipefd2[1],&ok,sizeof(int));
+					switch(communication_type)
+					{
+						case 1:
+						{
+							write(pipefd2[1],&ok,sizeof(int));
+							break;
+						}
+						case 2:
+						{
+
+							break;
+						}
+						case 3:
+						{
+
+							break;
+						}
+					}
 					exit(30);
 				}
 				read(fd,users,200);
@@ -425,26 +482,77 @@ int main(int argc, char* argv[])
 				}
 				close(fd);
 				//trimitere raspuns catre tata daca exista user
-				write(pipefd2[1],&ok,sizeof(int));
+				switch(communication_type)
+				{
+					case 1:
+					{
+						write(pipefd2[1],&ok,sizeof(int));
+						break;
+					}
+					case 2:
+					{
+
+						break;
+					}
+					case 3:
+					{
+
+						break;
+					}
+				}
 				if(ok==1)
 					break;
 			}
-			while(0!= (nrBytes=read(pipefd1[0],sirDinFiu,MAX_CHAR_SIZE)))
+			switch(communication_type)
 			{
-				sirDinFiu[nrBytes]='\0';
-				manipulate(sirDinFiu);
-				write(pipefd2[1],sirDinFiu,strlen(sirDinFiu));
-				if(strcmp(sirDinFiu,"quit")==0) 
+				case 1:
+				{
+					while(0!= (nrBytes=read(pipefd1[0],sirDinFiu,MAX_CHAR_SIZE)))
+					{
+						sirDinFiu[nrBytes]='\0';
+						manipulate(sirDinFiu);
+						write(pipefd2[1],sirDinFiu,strlen(sirDinFiu));
+						if(strcmp(sirDinFiu,"quit")==0) 
+							break;
+					}
+					close(pipefd1[0]);
+					close(pipefd2[1]);
 					break;
+				}
+				case 2:
+				{
+					
+					break;
+				}
+				case 3:
+				{
+					
+					break;
+				}
 			}
-			close(pipefd1[0]);
-			close(pipefd2[1]);
 			exit(0);
 		}
 		default:   //procesul tata
 		{
-			close(pipefd1[0]);
-			close(pipefd2[1]);
+			switch(communication_type)
+			{
+				case 1:
+				{
+					close(pipefd1[0]);
+					close(pipefd2[1]);
+					break;
+				}
+				case 2:
+				{
+					
+					break;
+				}
+				case 3:
+				{
+					
+					break;
+				}
+			}
 			printf("login as: ");
 			int ok,i,nr;
 			while(fgets(sir,MAX_CHAR_SIZE,stdin))
@@ -458,8 +566,25 @@ int main(int argc, char* argv[])
 				else
 				{
 					special_trim(sir);
-					write(pipefd1[1],sir,strlen(sir));
-					nr=read(pipefd2[0],&ok,sizeof(int));
+					switch(communication_type)
+					{
+						case 1:
+						{
+							write(pipefd1[1],sir,strlen(sir));
+							nr=read(pipefd2[0],&ok,sizeof(int));
+							break;
+						}
+						case 2:
+						{
+							//mknod
+							break;
+						}
+						case 3:
+						{
+							//socket
+							break;
+						}
+					}
 					printf("Numar de octeti primiti: %d \n",sizeof(int));
 					fflush(stdout);
 					if(ok==1)
@@ -487,8 +612,25 @@ int main(int argc, char* argv[])
 				if(ok==1)
 				{
 					special_trim(sir);
-					write(pipefd1[1],sir,strlen(sir));
-					nr=read(pipefd2[0],sir,MAX_CHAR_SIZE);
+					switch(communication_type)
+					{
+						case 1:
+						{
+							write(pipefd1[1],sir,strlen(sir));
+							nr=read(pipefd2[0],sir,MAX_CHAR_SIZE);
+							break;
+						}
+						case 2:
+						{
+							//mknod
+							break;
+						}
+						case 3:
+						{
+							//socket
+							break;
+						}
+					}
 					sir[nr]='\0';
 					printf("Numar de octeti primiti: %d \n",nr);
 					fflush(stdout);
@@ -503,8 +645,25 @@ int main(int argc, char* argv[])
 					sir=malloc(MAX_CHAR_SIZE);	
 				}
 			}
-			close(pipefd1[1]);
-			close(pipefd2[0]);
+			switch(communication_type)
+			{
+				case 1:
+				{
+					close(pipefd1[1]);
+					close(pipefd2[0]);
+					break;
+				}
+				case 2:
+				{
+					//mknod
+					break;
+				}
+				case 3:
+				{
+					//socket
+					break;
+				}
+			}
 		}
 	}
 	return 0;
