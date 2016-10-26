@@ -12,7 +12,7 @@
 #include <time.h>
 #include <dirent.h>
 
-#define MAX_CHAR_SIZE 10000
+#define MAX_CHAR_SIZE 1000
 char* longlongtoarray(long long numar)
 {
 	char sir[500]="";
@@ -372,11 +372,11 @@ int main(int argc, char* argv[])
 						if(strcmp(communication_type_string,"quit")==0)
 							exit(0);
 						else
-							printf("%s","Invalid command. Type quit if you want to exit myConsole.\n");
+							printf("%s","Invalid number. Type quit if you want to exit myConsole.\n");
 		}
 	}
 	fflush(stdout);
-	int pid,pipefd1[2],pipefd2[2];
+	int pid,pipefd1[2],pipefd2[2],fifo_fd_fiu_read,fifo_fd_fiu_write,fifo_fd_tata_read,fifo_fd_tata_write;
 	char *sir;
 	sir=malloc(MAX_CHAR_SIZE);
 	switch(communication_type)
@@ -397,7 +397,8 @@ int main(int argc, char* argv[])
 		}
 		case 2:
 		{
-			//mknod
+			mknod("fifo.fifo1", S_IFIFO | 0777, 0); //tata->fiu
+			mknod("fifo.fifo2", S_IFIFO | 0777, 0); //fiu->tata
 			break;
 		}
 		case 3:
@@ -413,10 +414,24 @@ int main(int argc, char* argv[])
 		{
 			char sirDinFiu[MAX_CHAR_SIZE],users[200];
 			int fd,nrBytes,ok=0;
-			if(communication_type==1)
+			switch(communication_type)
 			{
-				close(pipefd1[1]);
-				close(pipefd2[0]);
+				case 1:
+				{
+					close(pipefd1[1]);
+					close(pipefd2[0]);
+					break;
+				}
+				case 2:
+				{
+					fifo_fd_fiu_read =open("fifo.fifo1",O_RDONLY);
+					fifo_fd_fiu_write=open("fifo.fifo2",O_WRONLY);
+					break;
+				}
+				case 3:
+				{
+					break;
+				}
 			}
 
 			//citire user din tata
@@ -427,10 +442,11 @@ int main(int argc, char* argv[])
 					case 1:
 					{
 						nrBytes=read(pipefd1[0],&sirDinFiu,MAX_CHAR_SIZE);
+						break;
 					}
 					case 2:
 					{
-
+						nrBytes=read(fifo_fd_fiu_read,&sirDinFiu,MAX_CHAR_SIZE);
 						break;
 					}
 					case 3:
@@ -454,7 +470,7 @@ int main(int argc, char* argv[])
 						}
 						case 2:
 						{
-
+							write(fifo_fd_fiu_write,&ok,sizeof(int));
 							break;
 						}
 						case 3:
@@ -491,7 +507,7 @@ int main(int argc, char* argv[])
 					}
 					case 2:
 					{
-
+						write(fifo_fd_fiu_write,&ok,sizeof(int));
 						break;
 					}
 					case 3:
@@ -521,7 +537,14 @@ int main(int argc, char* argv[])
 				}
 				case 2:
 				{
-					
+					while(0!= (nrBytes=read(fifo_fd_fiu_read,sirDinFiu,MAX_CHAR_SIZE)))
+					{
+						sirDinFiu[nrBytes]='\0';
+						manipulate(sirDinFiu);
+						write(fifo_fd_fiu_write,sirDinFiu,strlen(sirDinFiu));
+						if(strcmp(sirDinFiu,"quit")==0) 
+							break;
+					}
 					break;
 				}
 				case 3:
@@ -544,7 +567,8 @@ int main(int argc, char* argv[])
 				}
 				case 2:
 				{
-					
+					fifo_fd_tata_write=open("fifo.fifo1",O_WRONLY);
+					fifo_fd_tata_read =open("fifo.fifo2",O_RDONLY);
 					break;
 				}
 				case 3:
@@ -577,6 +601,8 @@ int main(int argc, char* argv[])
 						case 2:
 						{
 							//mknod
+							write(fifo_fd_tata_write,sir,strlen(sir));
+							nr=read(fifo_fd_tata_read,&ok,sizeof(int));
 							break;
 						}
 						case 3:
@@ -623,6 +649,8 @@ int main(int argc, char* argv[])
 						case 2:
 						{
 							//mknod
+							write(fifo_fd_tata_write,sir,strlen(sir));
+							nr=read(fifo_fd_tata_read,sir,MAX_CHAR_SIZE);
 							break;
 						}
 						case 3:
@@ -655,7 +683,8 @@ int main(int argc, char* argv[])
 				}
 				case 2:
 				{
-					//mknod
+					close(fifo_fd_tata_read);
+					close(fifo_fd_tata_write);
 					break;
 				}
 				case 3:
