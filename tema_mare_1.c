@@ -347,7 +347,31 @@ void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, 
 }
 int main(int argc, char* argv[])
 {
-		
+	char communication_type[256];//1-pipe,2-fifo,3-socket,everything else-nothing
+	printf("%s\n", "Alegeti tipul de comunicare dorit: 1-pipe,2-fifo,3-socket");
+	while(1)
+	{
+		fgets(communication_type,256,stdin);
+		int ok=0,i;
+		for(i=0;i<strlen(communication_type);i++)
+			if(!strchr(" \n",communication_type[i]))
+				ok=1;
+		if(ok)
+		{
+			special_trim(communication_type);
+			if(strcmp(communication_type,"1")==0)
+				{printf("%s","Ati ales pipe.\n");break;}
+			else 
+				if(strcmp(communication_type,"2")==0)
+					{printf("%s","Ati ales fifo.\n");break;}
+				else
+					if(strcmp(communication_type,"3")==0)
+						{printf("%s","Ati ales socket.\n");break;}
+					else
+						printf("%s","???\n");
+		}
+	}
+	fflush(stdout);
 	int pid,pipefd1[2],pipefd2[2];
 	char *sir;
 	sir=malloc(MAX_CHAR_SIZE);
