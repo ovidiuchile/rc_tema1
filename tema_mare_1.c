@@ -512,7 +512,7 @@ int main(int argc, char* argv[])
 					}
 					case 3:
 					{
-
+						
 						break;
 					}
 				}
@@ -579,8 +579,9 @@ int main(int argc, char* argv[])
 			}
 			printf("login as: ");
 			int ok,i,nr;
-			while(fgets(sir,MAX_CHAR_SIZE,stdin))
+			while(1)
 			{
+				fgets(sir,MAX_CHAR_SIZE,stdin);
 				ok=0;
 				for(i=0;i<strlen(sir);i++)
 					if(!strchr(" \n",sir[i]))
