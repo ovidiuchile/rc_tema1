@@ -12,7 +12,7 @@
 #include <time.h>
 #include <dirent.h>
 
-#define MAX_CHAR_SIZE 1000
+#define MAX_CHAR_SIZE 10000
 char* longlongtoarray(long long numar)
 {
 	char sir[500]="";
