@@ -298,6 +298,30 @@ void myFind(char path[], char file_name[], char rezultat[])
 		sprintf(rezultat,"Eroare la deschiderea %s",path);
 	}
 }
+void myls(char path[],char rezultat[])
+{
+	strcpy(rezultat,"");
+	DIR *directory;
+	directory=opendir(path);
+	if(directory)
+	{
+		struct dirent *entry;
+		while(entry=readdir(directory))
+		{
+			if(entry->d_name[0]!='.')
+			{
+				strcat(rezultat,"\n");
+				strcat(rezultat,entry->d_name);
+			}
+		}
+		closedir(directory);
+		strcat(rezultat,"\n");
+	}
+	else
+	{
+		sprintf(rezultat,"Eroare la deschiderea %s",path);
+	}
+}
 void myCd(char directory[],char rezultat[])
 {
 	if(-1 == chdir(directory))
@@ -363,9 +387,21 @@ void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, 
 				myCd(cuvinte[1],sir);
 			}
 			else
-				strcpy(sir,"Comanda cd are nevoie de un argument.Exemplu: \"cd ..\"");
+				strcpy(sir,"Comanda cd are nevoie de un argument (exemplu: \"cd ..\"), sau 0 argumente pentru home directory.");
+		else if(strcmp(cuvinte[0],"ls")==0)
+			if(count==2 || count ==1)
+			{
+				if(count==1)
+				{
+					char cwd[256];
+					strcpy(cuvinte[1],getcwd(cwd,256));
+				}
+				myls(cuvinte[1],sir);
+			}
 			else
-				strcpy(sir,"Unkown command");
+				strcpy(sir,"Comanda ls are nevoie de 0 sau 1 argument: \"ls [path]\"");
+		else
+			strcpy(sir,"Unkown command");
 	}
 }
 int main(int argc, char* argv[])
@@ -670,11 +706,12 @@ int main(int argc, char* argv[])
 				}
 			}
 			printf("%s\n\n","Access granted!");
-			printf("%s\n","Comenzi disponibile: stat, find, cd, quit.");
+			printf("%s\n","Comenzi disponibile: stat, find, cd, ls, quit.");
 			printf("%s\n","Comanda stat are nevoie de un argument. Exemplu: \"stat file.txt\".");
 			printf("%s\n","Comanda find are nevoie de 1 sau 2 argumente. Exemplu: \"find path ceva.cpp\".");
 			printf("%s\n","  Al doilea argument accepta caracterul '?', inlocuind un singur caracter,\n  oricare ar fi acela." );
-			printf("%s\n","Comenzi cd are nevoie de 0 sau 1 argument. Exemplu: \"cd director\"");
+			printf("%s\n","Comanda cd are nevoie de 0 sau 1 argument. Exemplu: \"cd director\"");
+			printf("%s\n","Comanda ls are nevoie de 0 sau 1 argument. Exemplu: \"ls director\"");
 			printf("%s\n\n","Comanda quit nu are argumente.");
 
 			struct passwd *user;	//Uid, impreuna cu numele user-ului ce corespunde cu Uid
