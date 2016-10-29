@@ -419,16 +419,16 @@ int main(int argc, char* argv[])
 		if(ok)
 		{
 			special_trim(communication_type_string);
-			if(strcmp(communication_type_string,"1")==0)
+			if(strcmp(communication_type_string,"1")==0 || strcmp(communication_type_string,"pipe")==0)
 				{printf("%s","Ati ales pipe.\n");communication_type=1;break;}
 			else 
-				if(strcmp(communication_type_string,"2")==0)
+				if(strcmp(communication_type_string,"2")==0 || strcmp(communication_type_string,"fifo")==0)
 					{printf("%s","Ati ales fifo.\n");communication_type=2;break;}
 				else
-					if(strcmp(communication_type_string,"3")==0)
+					if(strcmp(communication_type_string,"3")==0 || strcmp(communication_type_string,"socket")==0)
 						{printf("%s","Ati ales socket.\n");communication_type=3;break;}
 					else
-						if(strcmp(communication_type_string,"quit")==0)
+						if(strcmp(communication_type_string,"quit")==0) 
 							exit(0);
 						else
 							printf("%s","Invalid number. Type quit if you want to exit myConsole.\n");
@@ -437,7 +437,6 @@ int main(int argc, char* argv[])
 	fflush(stdout);
 	int pid,pipefd1[2],pipefd2[2],fifo_fd_fiu_read,fifo_fd_fiu_write,fifo_fd_tata_read,fifo_fd_tata_write;
 	char *sir;
-	int sockp1[2],sockp2[2];
 	sir=malloc(MAX_CHAR_SIZE);
 	switch(communication_type)
 	{
@@ -463,12 +462,12 @@ int main(int argc, char* argv[])
 		}
 		case 3:
 		{
-			if (socketpair(AF_LOCAL, SOCK_STREAM, 0, sockp1) < 0) //tata->fiu
+			if (socketpair(AF_LOCAL, SOCK_STREAM, 0, pipefd1) < 0) //tata->fiu
 	        { 
 	        	perror("Err... socketpair1"); 
 	        	exit(1); 
 	      	}
-	      	if (socketpair(AF_LOCAL, SOCK_STREAM, 0, sockp2) < 0) //fiu->tata
+	      	if (socketpair(AF_LOCAL, SOCK_STREAM, 0, pipefd2) < 0) //fiu->tata
 	        { 
 	        	perror("Err... socketpair2"); 
 	        	exit(1); 
@@ -493,13 +492,14 @@ int main(int argc, char* argv[])
 				}
 				case 2:
 				{
-					fifo_fd_fiu_read =open("fifo.fifo1",O_RDONLY);
-					fifo_fd_fiu_write=open("fifo.fifo2",O_WRONLY);
+					pipefd1[0]=open("fifo.fifo1",O_RDONLY);
+					pipefd2[1]=open("fifo.fifo2",O_WRONLY);
 					break;
 				}
 				case 3:
 				{
-					
+					close(pipefd1[1]);
+					close(pipefd2[0]);
 					break;
 				}
 			}
@@ -507,48 +507,14 @@ int main(int argc, char* argv[])
 			//citire user din tata
 			while(1)
 			{
-				switch(communication_type)
-				{
-					case 1:
-					{
-						nrBytes=read(pipefd1[0],&sirDinFiu,MAX_CHAR_SIZE);
-						break;
-					}
-					case 2:
-					{
-						nrBytes=read(fifo_fd_fiu_read,&sirDinFiu,MAX_CHAR_SIZE);
-						break;
-					}
-					case 3:
-					{
-						nrBytes=read(sockp1[1],&sirDinFiu,MAX_CHAR_SIZE);
-						break;
-					}
-				}
+				nrBytes=read(pipefd1[0],&sirDinFiu,MAX_CHAR_SIZE);
 				sirDinFiu[nrBytes]='\0';
 				//verificare daca exista user
 				if(-1 == (fd=open("/fenrir/studs/ovidiu.chile/RC/from_sublime/users.txt",O_RDONLY)))
 				{
 					perror("users.txt");
 					ok=2;
-					switch(communication_type)
-					{
-						case 1:
-						{
-							write(pipefd2[1],&ok,sizeof(int));
-							break;
-						}
-						case 2:
-						{
-							write(fifo_fd_fiu_write,&ok,sizeof(int));
-							break;
-						}
-						case 3:
-						{
-							write(sockp1[1],&ok,sizeof(int));
-							break;
-						}
-					}
+					write(pipefd2[1],&ok,sizeof(int));
 					exit(30);
 				}
 				read(fd,users,200);
@@ -568,72 +534,20 @@ int main(int argc, char* argv[])
 				}
 				close(fd);
 				//trimitere raspuns catre tata daca exista user
-				switch(communication_type)
-				{
-					case 1:
-					{
-						write(pipefd2[1],&ok,sizeof(int));
-						break;
-					}
-					case 2:
-					{
-						write(fifo_fd_fiu_write,&ok,sizeof(int));
-						break;
-					}
-					case 3:
-					{
-						write(sockp1[1],&ok,sizeof(int));
-						break;
-					}
-				}
+				write(pipefd2[1],&ok,sizeof(int));
 				if(ok==1)
 					break;
 			}
-			switch(communication_type)
+			while(0!= (nrBytes=read(pipefd1[0],sirDinFiu,MAX_CHAR_SIZE)))
 			{
-				case 1:
-				{
-					while(0!= (nrBytes=read(pipefd1[0],sirDinFiu,MAX_CHAR_SIZE)))
-					{
-						sirDinFiu[nrBytes]='\0';
-						manipulate(sirDinFiu);
-						write(pipefd2[1],sirDinFiu,strlen(sirDinFiu));
-						if(strcmp(sirDinFiu,"quit")==0) 
-							break;
-					}
-					close(pipefd1[0]);
-					close(pipefd2[1]);
+				sirDinFiu[nrBytes]='\0';
+				manipulate(sirDinFiu);
+				write(pipefd2[1],sirDinFiu,strlen(sirDinFiu));
+				if(strcmp(sirDinFiu,"quit")==0) 
 					break;
-				}
-				case 2:
-				{
-					while(0!= (nrBytes=read(fifo_fd_fiu_read,sirDinFiu,MAX_CHAR_SIZE)))
-					{
-						sirDinFiu[nrBytes]='\0';
-						manipulate(sirDinFiu);
-						write(fifo_fd_fiu_write,sirDinFiu,strlen(sirDinFiu));
-						if(strcmp(sirDinFiu,"quit")==0) 
-							break;
-					}
-					break;
-				}
-				case 3:
-				{
-					while(0!= (nrBytes=read(sockp1[1],sirDinFiu,MAX_CHAR_SIZE)))
-					{
-						sirDinFiu[nrBytes]='\0';
-						manipulate(sirDinFiu);
-						write(sockp1[1],sirDinFiu,strlen(sirDinFiu));
-						if(strcmp(sirDinFiu,"quit")==0) 
-							break;
-					}
-					close(sockp1[0]);
-					close(sockp2[1]);
-					close(sockp1[1]);
-					close(sockp2[0]);
-					break;
-				}
 			}
+			close(pipefd1[0]);
+			close(pipefd2[1]);
 			exit(0);
 		}
 		default:   //procesul tata
@@ -648,13 +562,14 @@ int main(int argc, char* argv[])
 				}
 				case 2:
 				{
-					fifo_fd_tata_write=open("fifo.fifo1",O_WRONLY);
-					fifo_fd_tata_read =open("fifo.fifo2",O_RDONLY);
+					pipefd1[1]=open("fifo.fifo1",O_WRONLY);
+					pipefd2[0] =open("fifo.fifo2",O_RDONLY);
 					break;
 				}
 				case 3:
 				{
-					
+					close(pipefd1[0]);
+					close(pipefd2[1]);
 					break;
 				}
 			}
@@ -672,29 +587,8 @@ int main(int argc, char* argv[])
 				else
 				{
 					special_trim(sir);
-					switch(communication_type)
-					{
-						case 1:
-						{
-							write(pipefd1[1],sir,strlen(sir));
-							nr=read(pipefd2[0],&ok,sizeof(int));
-							break;
-						}
-						case 2:
-						{
-							//mknod
-							write(fifo_fd_tata_write,sir,strlen(sir));
-							nr=read(fifo_fd_tata_read,&ok,sizeof(int));
-							break;
-						}
-						case 3:
-						{
-							//socket
-							write(sockp1[0],sir,strlen(sir));
-							nr=read(sockp1[0],&ok,sizeof(int));
-							break;
-						}
-					}
+					write(pipefd1[1],sir,strlen(sir));
+					nr=read(pipefd2[0],&ok,sizeof(int));
 					printf("Numar de octeti primiti: %d \n",sizeof(int));
 					fflush(stdout);
 					if(ok==1)
@@ -737,30 +631,8 @@ int main(int argc, char* argv[])
 				if(ok==1)
 				{
 					special_trim(sir);
-					switch(communication_type)
-					{
-						case 1:
-						{
-							write(pipefd1[1],sir,strlen(sir));
-							nr=read(pipefd2[0],sir,MAX_CHAR_SIZE);
-							break;
-						}
-						case 2:
-						{
-							//mknod
-							write(fifo_fd_tata_write,sir,strlen(sir));
-							nr=read(fifo_fd_tata_read,sir,MAX_CHAR_SIZE);
-							break;
-						}
-						case 3:
-						{
-							//socket
-
-							write(sockp1[0],sir,strlen(sir));
-							nr=read(sockp1[0],sir,MAX_CHAR_SIZE);
-							break;
-						}
-					}
+					write(pipefd1[1],sir,strlen(sir));
+					nr=read(pipefd2[0],sir,MAX_CHAR_SIZE);
 					sir[nr]='\0';
 					printf("Numar de octeti primiti: %d \n",nr);
 					fflush(stdout);
@@ -791,31 +663,10 @@ int main(int argc, char* argv[])
 				printf("[%s@%s %s] $ ",user->pw_name,host,cwd);
 				fflush(stdout);
 			}
-			switch(communication_type)
+			if(communication_type==2)
 			{
-				case 1:
-				{
-					close(pipefd1[1]);
-					close(pipefd2[0]);
-					break;
-				}
-				case 2:
-				{
-					close(fifo_fd_tata_read);
-					close(fifo_fd_tata_write);
-					unlink("fifo.fifo1");
-					unlink("fifo.fifo2");
-					break;
-				}
-				case 3:
-				{
-					//socket
-					close(sockp1[0]);
-					close(sockp2[1]);
-					close(sockp1[1]);
-					close(sockp2[0]);
-					break;
-				}
+				unlink("fifo.fifo1");
+				unlink("fifo.fifo2");
 			}
 		}
 	}
