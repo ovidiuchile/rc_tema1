@@ -11,7 +11,7 @@
 #include <grp.h>
 #include <time.h>
 #include <dirent.h>
-
+#include <sys/socket.h>
 #define MAX_CHAR_SIZE 10000
 char* longlongtoarray(long long numar)
 {
@@ -378,6 +378,7 @@ int main(int argc, char* argv[])
 	fflush(stdout);
 	int pid,pipefd1[2],pipefd2[2],fifo_fd_fiu_read,fifo_fd_fiu_write,fifo_fd_tata_read,fifo_fd_tata_write;
 	char *sir;
+	int sockp1[2],sockp2[2];
 	sir=malloc(MAX_CHAR_SIZE);
 	switch(communication_type)
 	{
@@ -403,7 +404,16 @@ int main(int argc, char* argv[])
 		}
 		case 3:
 		{
-			//socket
+			if (socketpair(AF_LOCAL, SOCK_STREAM, 0, sockp1) < 0) //tata->fiu
+	        { 
+	        	perror("Err... socketpair1"); 
+	        	exit(1); 
+	      	}
+	      	if (socketpair(AF_LOCAL, SOCK_STREAM, 0, sockp2) < 0) //fiu->tata
+	        { 
+	        	perror("Err... socketpair2"); 
+	        	exit(1); 
+	      	}
 			break;
 		}
 	}
@@ -430,6 +440,7 @@ int main(int argc, char* argv[])
 				}
 				case 3:
 				{
+					
 					break;
 				}
 			}
@@ -451,7 +462,7 @@ int main(int argc, char* argv[])
 					}
 					case 3:
 					{
-
+						nrBytes=read(sockp1[1],&sirDinFiu,MAX_CHAR_SIZE);
 						break;
 					}
 				}
@@ -475,7 +486,7 @@ int main(int argc, char* argv[])
 						}
 						case 3:
 						{
-
+							write(sockp1[1],&ok,sizeof(int));
 							break;
 						}
 					}
@@ -512,7 +523,7 @@ int main(int argc, char* argv[])
 					}
 					case 3:
 					{
-						
+						write(sockp1[1],&ok,sizeof(int));
 						break;
 					}
 				}
@@ -549,7 +560,18 @@ int main(int argc, char* argv[])
 				}
 				case 3:
 				{
-					
+					while(0!= (nrBytes=read(sockp1[1],sirDinFiu,MAX_CHAR_SIZE)))
+					{
+						sirDinFiu[nrBytes]='\0';
+						manipulate(sirDinFiu);
+						write(sockp1[1],sirDinFiu,strlen(sirDinFiu));
+						if(strcmp(sirDinFiu,"quit")==0) 
+							break;
+					}
+					close(sockp1[0]);
+					close(sockp2[1]);
+					close(sockp1[1]);
+					close(sockp2[0]);
 					break;
 				}
 			}
@@ -609,6 +631,8 @@ int main(int argc, char* argv[])
 						case 3:
 						{
 							//socket
+							write(sockp1[0],sir,strlen(sir));
+							nr=read(sockp1[0],&ok,sizeof(int));
 							break;
 						}
 					}
@@ -628,6 +652,19 @@ int main(int argc, char* argv[])
 			printf("%s\n","Comanda find are nevoie de 1 sau 2 argumente. Exemplu: \"find path ceva.cpp\".");
 			printf("%s\n","  Al doilea argument accepta caracterul '?', inlocuind un singur caracter,\n  oricare ar fi acela." );
 			printf("%s\n\n","Comanda quit nu are argumente.");
+
+			struct passwd *user;	//Uid, impreuna cu numele user-ului ce corespunde cu Uid
+			char *host=(char*)malloc(100);
+			char *cwd=(char*)malloc(256);
+			user=getpwuid(geteuid());
+			gethostname(host,100);
+			cwd=getcwd(cwd,256);
+			if(strstr(cwd,user->pw_dir))
+			{
+				cwd[0]='~';
+				strcpy(cwd+1,cwd+strlen(user->pw_dir));
+			}
+			printf("[%s@%s %s] $ ",user->pw_name,host,cwd);
 			fflush(stdout);
 			while(fgets(sir,MAX_CHAR_SIZE,stdin))
 			{
@@ -657,6 +694,9 @@ int main(int argc, char* argv[])
 						case 3:
 						{
 							//socket
+
+							write(sockp1[0],sir,strlen(sir));
+							nr=read(sockp1[0],sir,MAX_CHAR_SIZE);
 							break;
 						}
 					}
@@ -673,6 +713,16 @@ int main(int argc, char* argv[])
 					free(sir);
 					sir=malloc(MAX_CHAR_SIZE);	
 				}
+				user=getpwuid(geteuid());
+				gethostname(host,100);
+				cwd=getcwd(cwd,256);
+				if(strstr(cwd,user->pw_dir))
+				{
+					cwd[0]='~';
+					strcpy(cwd+1,cwd+strlen(user->pw_dir));
+				}
+				printf("[%s@%s %s] $ ",user->pw_name,host,cwd);
+				fflush(stdout);
 			}
 			switch(communication_type)
 			{
@@ -686,11 +736,17 @@ int main(int argc, char* argv[])
 				{
 					close(fifo_fd_tata_read);
 					close(fifo_fd_tata_write);
+					unlink("fifo.fifo1");
+					unlink("fifo.fifo2");
 					break;
 				}
 				case 3:
 				{
 					//socket
+					close(sockp1[0]);
+					close(sockp2[1]);
+					close(sockp1[1]);
+					close(sockp2[0]);
 					break;
 				}
 			}
