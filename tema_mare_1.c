@@ -298,7 +298,15 @@ void myFind(char path[], char file_name[], char rezultat[])
 		sprintf(rezultat,"Eroare la deschiderea %s",path);
 	}
 }
-
+void myCd(char directory[],char rezultat[])
+{
+	if(-1 == chdir(directory))
+		strcpy(rezultat,"Eroare la deschiderea directorului");
+	else
+	{
+		strcat(rezultat,directory);
+	}
+}
 void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, "sir" primind dupa
 							//apelul manipulate(sir);rezultatul ce va fi apoi trimis catre parinte 
 {
@@ -342,7 +350,22 @@ void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, 
 			}
 				else
 					strcpy(sir,"Comanda find are nevoie de 1 sau 2 argumente. Exemplu: \"find path ceva.cpp\"");
-		else strcpy(sir,"Unkown command");
+		else if(strcmp(cuvinte[0],"cd")==0)
+			if(count==2 || count==1)
+			{
+				strcpy(sir,"cd ");
+				if(count==1)
+				{
+					struct passwd *user;	//Uid, impreuna cu numele user-ului ce corespunde cu Uid
+					user=getpwuid(geteuid());
+					strcpy(cuvinte[1],user->pw_dir);
+				}
+				myCd(cuvinte[1],sir);
+			}
+			else
+				strcpy(sir,"Comanda cd are nevoie de un argument.Exemplu: \"cd ..\"");
+			else
+				strcpy(sir,"Unkown command");
 	}
 }
 int main(int argc, char* argv[])
@@ -468,7 +491,7 @@ int main(int argc, char* argv[])
 				}
 				sirDinFiu[nrBytes]='\0';
 				//verificare daca exista user
-				if(-1 == (fd=open("users.txt",O_RDONLY)))
+				if(-1 == (fd=open("/fenrir/studs/ovidiu.chile/RC/from_sublime/users.txt",O_RDONLY)))
 				{
 					perror("users.txt");
 					ok=2;
@@ -647,10 +670,11 @@ int main(int argc, char* argv[])
 				}
 			}
 			printf("%s\n\n","Access granted!");
-			printf("%s\n","Comenzi disponibile:");
+			printf("%s\n","Comenzi disponibile: stat, find, cd, quit.");
 			printf("%s\n","Comanda stat are nevoie de un argument. Exemplu: \"stat file.txt\".");
 			printf("%s\n","Comanda find are nevoie de 1 sau 2 argumente. Exemplu: \"find path ceva.cpp\".");
 			printf("%s\n","  Al doilea argument accepta caracterul '?', inlocuind un singur caracter,\n  oricare ar fi acela." );
+			printf("%s\n","Comenzi cd are nevoie de 0 sau 1 argument. Exemplu: \"cd director\"");
 			printf("%s\n\n","Comanda quit nu are argumente.");
 
 			struct passwd *user;	//Uid, impreuna cu numele user-ului ce corespunde cu Uid
@@ -707,6 +731,12 @@ int main(int argc, char* argv[])
 					{
 						if(strcmp(sir,"quit")==0) 
 							break;
+						if(sir[0]=='c'&&sir[1]=='d')
+						{
+							chdir(sir+3);
+							strcpy(sir,"Changed directory to ");
+							strcat(sir, getcwd(cwd,256));
+						}
 						printf("%s\n",sir);
 						fflush(stdout);
 					}
