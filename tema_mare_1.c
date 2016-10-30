@@ -407,9 +407,9 @@ void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, 
 int main(int argc, char* argv[])
 {
 	int communication_type,fd;
-	fd=open("users.txt",O_CREAT | O_WRONLY);
-	write(fd,"chile.ovidiu\ncineva.altcineva\nceva\nadmin\novidiu.chile",sizeof("chile.ovidiu\ncineva.altcineva\nceva\nadmin\novidiu.chile"));
-	close(fd);
+	FILE* fp=fopen("users.txt","w");
+	fprintf(fp,"chile.ovidiu\ncineva.altcineva\nceva\nadmin\novidiu.chile");
+	fclose(fp);
 	char communication_type_string[256];//1-pipe,2-fifo,3-socket,everything else-nothing
 	printf("%s\n", "Alegeti tipul de comunicare dorit: 1-pipe, 2-fifo, 3-socket.");
 	while(1)
