@@ -406,7 +406,10 @@ void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, 
 }
 int main(int argc, char* argv[])
 {
-	int communication_type;
+	int communication_type,fd;
+	fd=open("users.txt",O_CREAT | O_WRONLY);
+	write(fd,"chile.ovidiu\ncineva.altcineva\nceva\nadmin\novidiu.chile",sizeof("chile.ovidiu\ncineva.altcineva\nceva\nadmin\novidiu.chile"));
+	close(fd);
 	char communication_type_string[256];//1-pipe,2-fifo,3-socket,everything else-nothing
 	printf("%s\n", "Alegeti tipul de comunicare dorit: 1-pipe, 2-fifo, 3-socket.");
 	while(1)
@@ -481,7 +484,7 @@ int main(int argc, char* argv[])
 		case 0:		//procesul fiu
 		{
 			char sirDinFiu[MAX_CHAR_SIZE],users[200];
-			int fd,nrBytes,ok=0;
+			int nrBytes,ok=0;
 			switch(communication_type)
 			{
 				case 1:
@@ -510,7 +513,7 @@ int main(int argc, char* argv[])
 				nrBytes=read(pipefd1[0],&sirDinFiu,MAX_CHAR_SIZE);
 				sirDinFiu[nrBytes]='\0';
 				//verificare daca exista user
-				if(-1 == (fd=open("/fenrir/studs/ovidiu.chile/RC/from_sublime/users.txt",O_RDONLY)))
+				if(-1 == (fd=open("users.txt",O_RDONLY)))
 				{
 					perror("users.txt");
 					ok=2;
@@ -599,6 +602,7 @@ int main(int argc, char* argv[])
 							printf("User inexistent\nlogin as: ");
 				}
 			}
+			unlink("users.txt");
 			printf("%s\n\n","Access granted!");
 			printf("%s\n","Comenzi disponibile: stat, find, cd, ls, quit.");
 			printf("%s\n","Comanda stat are nevoie de un argument. Exemplu: \"stat file.txt\".");
