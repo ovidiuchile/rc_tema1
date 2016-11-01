@@ -346,12 +346,47 @@ void myCd(char directory[],char rezultat[])
 }
 void myHelp(char functie[],char rezultat[])
 {
+	printf("%s\n","Comanda stat are nevoie de un argument. Exemplu: \"stat file.txt\".");
+	printf("%s\n","Comanda find are nevoie de 1 sau 2 argumente. Exemplu: \"find path ceva.cpp\".");
+	printf("%s\n","  Al doilea argument accepta caracterul '?', inlocuind un singur caracter,\n  oricare ar fi acela." );
+	printf("%s\n","Comanda cd are nevoie de 0 sau 1 argument. Exemplu: \"cd director\"");
+	printf("%s\n","Comanda ls are nevoie de 0 sau 1 argument. Exemplu: \"ls director\"");
+	printf("%s\n\n","Comanda quit nu are argumente.");
 	if(strcmp(functie,"help")==0)
 	{
-		strcpy(sir,"Comanda help are nevoie de 0 sau 1 argument: \"help [comanda]\"\n");
-		strcat(sir,"Comenzi disponibile: stat, find, cd, ls, help, quit.\n");
-		strcat(sir,"Pentru informatii despre o anumita comanda, tastati \"help[comanda]\"");
+		strcpy(rezultat,"Comanda help ofera informatii despre comenzi si are nevoie de 0 sau 1 argument: \"help [comanda]\".\n");
+		strcat(rezultat,"Comenzi disponibile: stat, find, cd, ls, help, quit.\n");
+		strcat(rezultat,"Pentru informatii despre o anumita comanda, tastati \"help [comanda]\".\n");
+		strcat(rezultat,"Ex: 'help', 'help find', 'help stat'.");
 	}
+	else if(strcmp(functie,"ls")==0)
+	{
+		strcpy(rezultat,"Comanda ls afiseaza continutul directorului dat si are nevoie de 0 sau 1 argument: \"ls [director]\".\n");
+		strcat(rezultat,"Daca [director] este un camp gol, se considera ca fiind directorul curent.\n");
+		strcat(rezultat,"Ex: 'ls', 'ls ..', 'ls /tmp'.");
+	}
+	else if(strcmp(functie,"cd")==0)
+	{
+		strcpy(rezultat,"Comanda cd schimba directorul curent in cel specificat si are nevoie de 0 sau 1 argument: \"cd [director]\".\n");
+		strcat(rezultat,"Daca [director] este un camp gol, se considera ca fiind directorul home.\n");
+		strcat(rezultat,"Ex: 'cd', 'cd ..', 'cd /tmp'.");
+	}
+	else if(strcmp(functie,"stat")==0)
+	{
+		strcpy(rezultat,"Comanda stat ofera informatii despre fisierul dat si are nevoie de 1 argument: \"stat [fisier]\".\n");
+		strcat(rezultat,"Ex: 'stat director', 'stat myConsole', 'stat ..'.");
+	}
+	else if(strcmp(functie,"find")==0)
+	{
+		strcpy(rezultat,"Comanda find cauta recursiv fisierul (argv[2]) in directorul dat (argv[1]), ofera cateva informatii despre acesta si are nevoie de 1 sau 2 argumente: \"cd [director] file_name\".\n");
+		strcat(rezultat,"Daca [director] este un camp gol, se considera ca fiind directorul curent.\n");
+		strcat(rezultat,"Pentru numele fisierului cautat se poate folosi caracterul '?' pentru a desemna orice caracter.\n");
+		strcat(rezultat,"Ex: 'find ..', 'find ../.. a.out', 'find ../.. ??', 'find . myConsole', 'find myConsole'");
+	}
+	else if(strcmp(functie,"quit")==0)
+		strcpy(rezultat,"Comanda quit delogheaza utilizatorul si nu are argumente: 'quit'.");
+	else
+		strcpy(rezultat,"Comanda necunoscuta.");
 }
 void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, "sir" primind dupa
 							//apelul manipulate(sir) rezultatul ce va fi apoi trimis catre parinte 
@@ -433,7 +468,7 @@ void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, 
 			else
 				strcpy(sir,"Comanda help are nevoie de 0 sau 1 argument: \"help [comanda]\"");
 		else
-			strcpy(sir,"Unkown command");
+			strcpy(sir,"Comanda necunoscuta");
 	}
 }
 int main(int argc, char* argv[])
@@ -442,7 +477,7 @@ int main(int argc, char* argv[])
 	FILE* fp=fopen(".users.txt","w");
 	if(fp==NULL)
 	{
-		printf("%s\n","Something went bad");
+		printf("%s\n","Eroare la crearea users.txt");
 		exit(1);
 	}
 	fprintf(fp,"chile.ovidiu\ncineva.altcineva\nceva\nadmin\novidiu.chile");
@@ -451,7 +486,7 @@ int main(int argc, char* argv[])
 	FILE* fpass=fopen(".pass.txt","w");
 	if(fpass==NULL)
 	{
-		printf("%s\n","Something went bad");
+		printf("%s\n","Eroare la creare pass.txt");
 		exit(1);
 	}
 	fprintf(fpass,"1\ncineva\nceva\nadmin\nqwerty");
@@ -765,14 +800,9 @@ int main(int argc, char* argv[])
 			
 			
 			unlink(".users.txt");
+			unlink(".pass.txt");
 			printf("%s\n\n","Access granted!");
-			printf("%s\n","Comenzi disponibile: stat, find, cd, ls, quit.");
-			printf("%s\n","Comanda stat are nevoie de un argument. Exemplu: \"stat file.txt\".");
-			printf("%s\n","Comanda find are nevoie de 1 sau 2 argumente. Exemplu: \"find path ceva.cpp\".");
-			printf("%s\n","  Al doilea argument accepta caracterul '?', inlocuind un singur caracter,\n  oricare ar fi acela." );
-			printf("%s\n","Comanda cd are nevoie de 0 sau 1 argument. Exemplu: \"cd director\"");
-			printf("%s\n","Comanda ls are nevoie de 0 sau 1 argument. Exemplu: \"ls director\"");
-			printf("%s\n\n","Comanda quit nu are argumente.");
+			printf("%s\n","Comenzi disponibile: stat, find, cd, ls, help, quit.");
 
 			struct passwd *user;	//Uid, impreuna cu numele user-ului ce corespunde cu Uid
 			char *host=(char*)malloc(100);
