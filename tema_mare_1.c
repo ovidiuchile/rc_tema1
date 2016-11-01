@@ -542,8 +542,8 @@ int main(int argc, char* argv[])
 					break;
 				}
 			}
-
 			//citire user din tata
+			int counter1=0;
 			while(1)
 			{
 				if( (nrBytes=read(pipefd1[0],&sirDinFiu,MAX_CHAR_SIZE)) <0) 
@@ -573,6 +573,7 @@ int main(int argc, char* argv[])
 								ok=1;
 								break;
 							}
+							counter1++;
 							p=strtok(NULL,"\n ");
 						}
 						close(fd);
@@ -586,10 +587,56 @@ int main(int argc, char* argv[])
 			}
 
 			///////////////pasword////////////////////////
+			int counter2=0;
+			ok=0;
+			while(1)
+			{
+				if( (nrBytes=read(pipefd1[0],&sirDinFiu,MAX_CHAR_SIZE)) <0) 
+					ok=2;
+				else
+				{
+					sirDinFiu[nrBytes]='\0';
+					//verificare daca exista user
+					if(-1 == (fd=open(".pass.txt",O_RDONLY)))
+					{
+						perror(".pass.txt");
+						ok=2;
+						write(pipefd2[1],&ok,sizeof(int));
+						exit(30);
+					}
+					if(-1==(nrBytes=read(fd,users,200)))
+						ok=2;
+					else
+					{
+						ok=0;
+						users[nrBytes]='\0';
+						printf("[fiu]sirDinFiu: %s\n",sirDinFiu);
+						char *p;
+						p=strtok(users,"\n ");
+						while(p)
+						{
+							if(strcmp(p,sirDinFiu)==0)
+							{
+								if(counter1==counter2)
+									ok=1;
+								else
+									ok=0;
+								break;
+							}
+							counter2++;
+							p=strtok(NULL,"\n ");
+						}
+						close(fd);
+					}
+				}
+				//trimitere raspuns catre tata daca exista user
+				if(-1 == write(pipefd2[1],&ok,sizeof(int)))
+					break;
+				if(ok>0)
+					break;
+			}
 
-
-
-			///////////////pasword////////////////////////
+			///////////////paswordend////////////////////////
 
 			while(0< (nrBytes=read(pipefd1[0],sirDinFiu,MAX_CHAR_SIZE)))
 			{
@@ -637,6 +684,7 @@ int main(int argc, char* argv[])
 			}
 			printf("login as: ");
 			int ok,i,nr;
+			char* utilizator=(char*)malloc(MAX_CHAR_SIZE);
 			while(1)
 			{
 				fgets(sir,MAX_CHAR_SIZE,stdin);
@@ -649,6 +697,7 @@ int main(int argc, char* argv[])
 				else
 				{
 					special_trim(sir);
+					strcpy(utilizator,sir);
 					if(-1==write(pipefd1[1],sir,strlen(sir)))
 						exit(99);
 					nr=read(pipefd2[0],&ok,sizeof(int));
@@ -665,9 +714,35 @@ int main(int argc, char* argv[])
 			}
 
 			///////////////pasword////////////////////////
-			
+			printf("%s@%s's password: ",utilizator,"localhost");
+			while(1)
+			{
+				fgets(sir,MAX_CHAR_SIZE,stdin);
+				ok=0;
+				for(i=0;i<strlen(sir);i++)
+					if(!strchr(" \n",sir[i]))
+						ok=1;
+				if(ok==0)
+					printf("Acces denied\n%s@%s's password: ",utilizator,"localhost");
+				else
+				{
+					special_trim(sir);
+					if(-1==write(pipefd1[1],sir,strlen(sir)))
+						exit(99);
+					nr=read(pipefd2[0],&ok,sizeof(int));
+					if(nr==-1) exit(99);
+					printf("Numar de octeti primiti: %d \n",sizeof(int));
+					fflush(stdout);
+					if(ok==1)
+						break;
+					else if(ok==2)
+							exit(30);
+						 else
+							printf("Acces denied\n%s@%s's password: ",utilizator,"localhost");
+				}
+			}
 
-			///////////////pasword////////////////////////
+			///////////////paswordend////////////////////////
 			
 			
 			unlink(".users.txt");
