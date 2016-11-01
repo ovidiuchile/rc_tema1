@@ -344,6 +344,15 @@ void myCd(char directory[],char rezultat[])
 	else
 		strcat(rezultat,directory);
 }
+void myHelp(char functie[],char rezultat[])
+{
+	if(strcmp(functie,"help")==0)
+	{
+		strcpy(sir,"Comanda help are nevoie de 0 sau 1 argument: \"help [comanda]\"\n");
+		strcat(sir,"Comenzi disponibile: stat, find, cd, ls, help, quit.\n");
+		strcat(sir,"Pentru informatii despre o anumita comanda, tastati \"help[comanda]\"");
+	}
+}
 void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, "sir" primind dupa
 							//apelul manipulate(sir) rezultatul ce va fi apoi trimis catre parinte 
 {
@@ -413,6 +422,16 @@ void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, 
 			}
 			else
 				strcpy(sir,"Comanda ls are nevoie de 0 sau 1 argument: \"ls [path]\"");
+		else if(strcmp(cuvinte[0],"help")==0)
+			if(count==1 || count==2)
+			{
+				if(count==1)
+					myHelp("help",sir);
+				else
+					myHelp(cuvinte[1],sir);
+			}
+			else
+				strcpy(sir,"Comanda help are nevoie de 0 sau 1 argument: \"help [comanda]\"");
 		else
 			strcpy(sir,"Unkown command");
 	}
@@ -566,6 +585,7 @@ int main(int argc, char* argv[])
 						ok=0;
 						char *p;
 						p=strtok(users,"\n ");
+						counter1=0;
 						while(p)
 						{
 							if(strcmp(p,sirDinFiu)==0)
@@ -587,7 +607,6 @@ int main(int argc, char* argv[])
 			}
 
 			///////////////pasword////////////////////////
-			int counter2=0;
 			ok=0;
 			while(1)
 			{
@@ -596,7 +615,7 @@ int main(int argc, char* argv[])
 				else
 				{
 					sirDinFiu[nrBytes]='\0';
-					//verificare daca exista user
+					//verificare daca parola e cea corespunzatoare userului
 					if(-1 == (fd=open(".pass.txt",O_RDONLY)))
 					{
 						perror(".pass.txt");
@@ -610,9 +629,9 @@ int main(int argc, char* argv[])
 					{
 						ok=0;
 						users[nrBytes]='\0';
-						printf("[fiu]sirDinFiu: %s\n",sirDinFiu);
 						char *p;
 						p=strtok(users,"\n ");
+						int counter2=0;
 						while(p)
 						{
 							if(strcmp(p,sirDinFiu)==0)
@@ -714,7 +733,7 @@ int main(int argc, char* argv[])
 			}
 
 			///////////////pasword////////////////////////
-			printf("%s@%s's password: ",utilizator,"localhost");
+			printf("%s","Password: ");
 			while(1)
 			{
 				fgets(sir,MAX_CHAR_SIZE,stdin);
@@ -723,7 +742,7 @@ int main(int argc, char* argv[])
 					if(!strchr(" \n",sir[i]))
 						ok=1;
 				if(ok==0)
-					printf("Acces denied\n%s@%s's password: ",utilizator,"localhost");
+					printf("%s","Acces denied\nPassword: ");
 				else
 				{
 					special_trim(sir);
@@ -738,7 +757,7 @@ int main(int argc, char* argv[])
 					else if(ok==2)
 							exit(30);
 						 else
-							printf("Acces denied\n%s@%s's password: ",utilizator,"localhost");
+							printf("%s","Acces denied\nPassword: ");
 				}
 			}
 
