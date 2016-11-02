@@ -346,16 +346,10 @@ void myCd(char directory[],char rezultat[])
 }
 void myHelp(char functie[],char rezultat[])
 {
-	printf("%s\n","Comanda stat are nevoie de un argument. Exemplu: \"stat file.txt\".");
-	printf("%s\n","Comanda find are nevoie de 1 sau 2 argumente. Exemplu: \"find path ceva.cpp\".");
-	printf("%s\n","  Al doilea argument accepta caracterul '?', inlocuind un singur caracter,\n  oricare ar fi acela." );
-	printf("%s\n","Comanda cd are nevoie de 0 sau 1 argument. Exemplu: \"cd director\"");
-	printf("%s\n","Comanda ls are nevoie de 0 sau 1 argument. Exemplu: \"ls director\"");
-	printf("%s\n\n","Comanda quit nu are argumente.");
 	if(strcmp(functie,"help")==0)
 	{
 		strcpy(rezultat,"Comanda help ofera informatii despre comenzi si are nevoie de 0 sau 1 argument: \"help [comanda]\".\n");
-		strcat(rezultat,"Comenzi disponibile: stat, find, cd, ls, help, quit.\n");
+		strcat(rezultat,"Comenzi disponibile: stat, find, cd, ls, help, pwd, quit.\n");
 		strcat(rezultat,"Pentru informatii despre o anumita comanda, tastati \"help [comanda]\".\n");
 		strcat(rezultat,"Ex: 'help', 'help find', 'help stat'.");
 	}
@@ -385,8 +379,15 @@ void myHelp(char functie[],char rezultat[])
 	}
 	else if(strcmp(functie,"quit")==0)
 		strcpy(rezultat,"Comanda quit delogheaza utilizatorul si nu are argumente: 'quit'.");
+	else if(strcmp(functie,"pwd")==0)
+		strcpy(rezultat,"Comanda pwd afiseaza directorul curent si nu are argumente: 'pwd'.");
 	else
 		strcpy(rezultat,"Comanda necunoscuta.");
+}
+void myPwd(char rezultat[])
+{
+	strcpy(rezultat,"Directorul curent este ");
+	strcat(rezultat,getcwd(NULL,256));
 }
 void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, "sir" primind dupa
 							//apelul manipulate(sir) rezultatul ce va fi apoi trimis catre parinte 
@@ -467,8 +468,14 @@ void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, 
 			}
 			else
 				strcpy(sir,"Comanda help are nevoie de 0 sau 1 argument: \"help [comanda]\"");
-		else
-			strcpy(sir,"Comanda necunoscuta");
+		else if(strcmp(cuvinte[0],"pwd")==0)
+		{
+			if(count==1)
+				myPwd(sir);
+			else
+				strcpy(sir,"Comanda pwd nu are argumente");
+		}
+		else strcpy(sir,"Comanda necunoscuta");
 	}
 }
 int main(int argc, char* argv[])
@@ -802,7 +809,7 @@ int main(int argc, char* argv[])
 			unlink(".users.txt");
 			unlink(".pass.txt");
 			printf("%s\n\n","Access granted!");
-			printf("%s\n","Comenzi disponibile: stat, find, cd, ls, help, quit.");
+			printf("%s\n","Comenzi disponibile: stat, find, cd, ls, help, pwd, quit.");
 
 			struct passwd *user;	//Uid, impreuna cu numele user-ului ce corespunde cu Uid
 			char *host=(char*)malloc(100);
@@ -841,7 +848,7 @@ int main(int argc, char* argv[])
 						if(sir[0]=='c'&&sir[1]=='d')
 						{
 							chdir(sir+3);
-							strcpy(sir,"Changed directory to ");
+							strcpy(sir,"Director curent schimbat la ");
 							strcat(sir, getcwd(cwd,256));
 						}
 						printf("%s\n",sir);
