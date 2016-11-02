@@ -54,14 +54,14 @@ char* time_ttoarray(time_t timp)
 	strcat(sir,longlongtoarray((long long)(timp_spart->tm_min)));
 	strcat(sir,":");
 	strcat(sir,longlongtoarray((long long)(timp_spart->tm_sec)));
-	//strcat(sir," +0");								//introducerea fusului orar in format
-	//time_t aux=time(NULL);							//asemanator celui dat de comanda stat din linux
-  	//struct tm t;									//
-  	//localtime_r(&aux, &t);							//
-  	//strcat(sir,longlongtoarray(t.tm_gmtoff/3600));	//3600= 60s*60min
-	//strcat(sir,"00");								//
-	strcat(sir," +0");
-	strcat(sir,longlongtoarray((long long)(timp_spart->tm_isdst)));
+	strcat(sir," +0");								//introducerea fusului orar in format
+	time_t aux=time(NULL);							//asemanator celui dat de comanda stat din linux
+  	struct tm t;									//
+  	localtime_r(&aux, &t);							//
+  	if(timp_spart->tm_isdst==1)						//daca daylight saving time e activat, aduna o ora=3600s
+  		t.tm_gmtoff+=3600;							//
+  	strcat(sir,longlongtoarray(t.tm_gmtoff/3600));	//
+	strcat(sir,"00");								//
 }
 void myStat(char file_path[],char rezultat[])
 {
