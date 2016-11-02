@@ -14,35 +14,38 @@
 #include <sys/socket.h>
 #include <ncurses.h>
 #define MAX_CHAR_SIZE 10000
+#define MAX_TIME_TO_CHAR_SIZE 100
+#define MAX_FILE_ACCES_CHAR_SIZE 11
+#define SMALL_MAX_CHAR_SIZE 256
+#define MAX_NUMBER_OF_WORDS 5
 char* longlongtoarray(long long numar)
 {
-	char sir[500]="";
-	int k=0,i;
+	char sir[SMALL_MAX_CHAR_SIZE]="";
+	int nr_size=0,i;
 	if(numar==0)
-		sir[k++]='0';
+		sir[nr_size++]='0';
 	while(numar!=0) 			//introducerea cifrelor in sirul dorit(in ordine inversa)
 	{							//
-		sir[k]=numar%10+'0';	//
+		sir[nr_size]=numar%10+'0';
 		numar/=10;				//
-		k++;					//
+		nr_size++;				//
 	}							///
-	sir[k]='\0';				//inchiderea sirului
-	for(i=0;i<k/2;i++) 			//oglindirea sirului
+	sir[nr_size]='\0';			//inchiderea sirului
+	for(i=0;i<nr_size/2;i++) 	//oglindirea sirului
 	{							//
 		char aux=sir[i];		//
-		sir[i]=sir[k-1-i];		//
-		sir[k-i-1]=aux;			//
+		sir[i]=sir[nr_size-1-i];//
+		sir[nr_size-i-1]=aux;	//
 	}							///
 	return sir;
-
 }
 char* time_ttoarray(time_t timp)
 {
 	struct tm *timp_spart=localtime(&timp);
-	char sir[100]="";
-	strcat(sir,longlongtoarray((long long)(timp_spart->tm_year+1900)));
+	char sir[MAX_TIME_TO_CHAR_SIZE]="";
+	strcat(sir,longlongtoarray((long long)(timp_spart->tm_year+1900))); //tm_year : number of years since 1900
 	strcat(sir,"-");
-	strcat(sir,longlongtoarray((long long)(timp_spart->tm_mon+1)));
+	strcat(sir,longlongtoarray((long long)(timp_spart->tm_mon+1))); //number of months since january (range 0:11)
 	strcat(sir,"-");
 	strcat(sir,longlongtoarray((long long)(timp_spart->tm_mday)));
 	strcat(sir," ");
@@ -51,13 +54,14 @@ char* time_ttoarray(time_t timp)
 	strcat(sir,longlongtoarray((long long)(timp_spart->tm_min)));
 	strcat(sir,":");
 	strcat(sir,longlongtoarray((long long)(timp_spart->tm_sec)));
-	strcat(sir," +0");								//introducerea fusului orar
-	time_t abc=time(NULL);							//
-  	struct tm t;									//
-  	localtime_r(&abc, &t);							//
-  	strcat(sir,longlongtoarray(t.tm_gmtoff/3600));	//
-	strcat(sir,"00");								//
-
+	//strcat(sir," +0");								//introducerea fusului orar in format
+	//time_t aux=time(NULL);							//asemanator celui dat de comanda stat din linux
+  	//struct tm t;									//
+  	//localtime_r(&aux, &t);							//
+  	//strcat(sir,longlongtoarray(t.tm_gmtoff/3600));	//3600= 60s*60min
+	//strcat(sir,"00");								//
+	strcat(sir," +0");
+	strcat(sir,longlongtoarray((long long)(timp_spart->tm_isdst)));
 }
 void myStat(char file_path[],char rezultat[])
 {
@@ -92,7 +96,7 @@ void myStat(char file_path[],char rezultat[])
 	strcat(rezultat,longlongtoarray((long long)informatii.st_blksize));
 	strcat(rezultat,"   ");
 
-	char file_access[11];					//tipul fisierului
+	char file_access[MAX_FILE_ACCES_CHAR_SIZE];					//tipul fisierului
 	switch(informatii.st_mode & S_IFMT)		////file_access[0] va fi folosit la informatiile despre accesul la fisier
 	{
 		case S_IFDIR: strcat(rezultat,"directory\n"); file_access[0]='d';break;
@@ -105,7 +109,7 @@ void myStat(char file_path[],char rezultat[])
 		default: strcat(rezultat,"unkown file type\n"); file_access[0]='u' ; break;
 	}
 	
-	char sir[50]="";	//ID-ul device-ului in hexa, apoi in deci
+	char sir[SMALL_MAX_CHAR_SIZE]="";	//ID-ul device-ului in hexa, apoi in deci
 	strcat(rezultat,"Device: ");
 	sprintf(sir,"%x",(int)informatii.st_dev);
 	strcat(rezultat,sir);
@@ -214,7 +218,7 @@ void directoryRecursion(char path[], char file_name[],char rezultat[])
 	}
 	else
 	{
-		char newp[256];
+		char new_path[SMALL_MAX_CHAR_SIZE];
 		struct stat informatii;
 		while(entry=readdir(directory))
 		{
@@ -230,23 +234,23 @@ void directoryRecursion(char path[], char file_name[],char rezultat[])
 						if(file_name[i]!='?')
 							ok=0;
 			
-			strcpy(newp,path);
-			strcat(newp,"/");
-			strcat(newp,entry->d_name);
-			if( -1 == stat(newp,&informatii) )
+			strcpy(new_path,path);
+			strcat(new_path,"/");
+			strcat(new_path,entry->d_name);
+			if( -1 == stat(new_path,&informatii) )
 			{
 				strcat(rezultat,"\nEroare la obtinerea informatiilor despre fisierul ");
-				strcat(rezultat,newp);
+				strcat(rezultat,new_path);
 			}	
 			else
 			{
 				if(ok==1)
 				{
 					strcat(rezultat,"\n");
-					strcat(rezultat,newp);
+					strcat(rezultat,new_path);
 					
 					strcat(rezultat,"\n    File type: ");
-					char file_access[11];
+					char file_access[MAX_FILE_ACCES_CHAR_SIZE];
 					switch(informatii.st_mode & S_IFMT)		////file_access[0] va fi folosit la informatiile despre accesul la fisier
 					{
 						case S_IFDIR: strcat(rezultat,"directory\n"); file_access[0]='d';break;
@@ -290,9 +294,9 @@ void directoryRecursion(char path[], char file_name[],char rezultat[])
 					strcat(rezultat,")  ");
 					strcat(rezultat,"\n");
 				}
-				if(strcmp(entry->d_name,"..")!=0 && strcmp(entry->d_name,".")!=0)
+				if(strcmp(entry->d_name,"..")!=0 && strcmp(entry->d_name,".")!=0 && strcmp(entry->d_name,"tmp")!=0)
 					if(S_ISDIR(informatii.st_mode))
-						directoryRecursion(newp,file_name,rezultat);
+						directoryRecursion(new_path,file_name,rezultat);
 			}
 		}
 		closedir(directory);
@@ -387,20 +391,20 @@ void myHelp(char functie[],char rezultat[])
 void myPwd(char rezultat[])
 {
 	strcpy(rezultat,"Directorul curent este ");
-	strcat(rezultat,getcwd(NULL,256));
+	strcat(rezultat,getcwd(NULL,SMALL_MAX_CHAR_SIZE));
 }
-void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, "sir" primind dupa
-							//apelul manipulate(sir) rezultatul ce va fi apoi trimis catre parinte 
+void manipulate(char rezultat[]) //manipularea sirului primit de catre procesul fiu, "rezultat" primind dupa
+							//apelul manipulate(rezultat) rezultatul ce va fi apoi trimis catre parinte 
 {
-	if(count_words(sir)>5||count_words(sir)==0)
+	if(count_words(rezultat)>MAX_NUMBER_OF_WORDS||count_words(rezultat)==0)
 	{
-		strcpy(sir,"Comanda necunoscuta");
+		strcpy(rezultat,"Comanda necunoscuta");
 	}
 	else	//determinarea comenzii ce va trebui folosita
 	{
-		char *p, sir2[1000],cuvinte[6][100];	
+		char *p,cuvinte[MAX_NUMBER_OF_WORDS][SMALL_MAX_CHAR_SIZE];	
 		int count=0;
-		p=strtok(sir,"\n ");
+		p=strtok(rezultat,"\n ");
 		while(p)
 		{
 			strcpy(cuvinte[count],p);
@@ -410,72 +414,72 @@ void manipulate(char sir[]) //manipularea sirului primit de catre procesul fiu, 
 
 		if(strcmp(cuvinte[0],"stat")==0)
 			if(count==2)
-				myStat(cuvinte[1],sir);
+				myStat(cuvinte[1],rezultat);
 			else
-				strcpy(sir,"Comanda stat are nevoie de un argument. Exemplu: \"stat file.txt\"");
+				strcpy(rezultat,"Comanda stat are nevoie de un argument. Exemplu: \"stat file.txt\"");
 		else if(strcmp(cuvinte[0],"quit")==0)
 			if(count!=1)
-				strcpy(sir,"Did you mean 'quit'?");
+				strcpy(rezultat,"Comanda quit nu are argumente");
 			else{}
 		else if(strcmp(cuvinte[0],"find")==0)
 			if(count==3)
 			{
-				myFind(cuvinte[1],cuvinte[2],sir);
-				if(strcmp(sir,"")==0)
-					strcpy(sir,"Niciun rezultat");
+				myFind(cuvinte[1],cuvinte[2],rezultat);
+				if(strcmp(rezultat,"")==0)
+					strcpy(rezultat,"Niciun rezultat");
 			}
 			else if(count==2)
 			{
-				myFind(".",cuvinte[1],sir);
-				if(strcmp(sir,"")==0)
-					strcpy(sir,"Niciun rezultat");
+				myFind(".",cuvinte[1],rezultat);
+				if(strcmp(rezultat,"")==0)
+					strcpy(rezultat,"Niciun rezultat");
 			}
 				else
-					strcpy(sir,"Comanda find are nevoie de 1 sau 2 argumente. Exemplu: \"find path ceva.cpp\"");
+					strcpy(rezultat,"Comanda find are nevoie de 1 sau 2 argumente. Exemplu: \"find path ceva.cpp\"");
 		else if(strcmp(cuvinte[0],"cd")==0)
 			if(count==2 || count==1)
 			{
-				strcpy(sir,"cd ");
+				strcpy(rezultat,"cd ");
 				if(count==1)
 				{
 					struct passwd *user;	//Uid, impreuna cu numele user-ului ce corespunde cu Uid
 					user=getpwuid(geteuid());
 					strcpy(cuvinte[1],user->pw_dir);
 				}
-				myCd(cuvinte[1],sir);
+				myCd(cuvinte[1],rezultat);
 			}
 			else
-				strcpy(sir,"Comanda cd are nevoie de un argument (exemplu: \"cd ..\"), sau 0 argumente pentru home directory.");
+				strcpy(rezultat,"Comanda cd are nevoie de un argument (exemplu: \"cd ..\"), sau 0 argumente pentru home directory.");
 		else if(strcmp(cuvinte[0],"ls")==0)
 			if(count==2 || count ==1)
 			{
 				if(count==1)
 				{
-					char cwd[256];
-					strcpy(cuvinte[1],getcwd(cwd,256));
+					char cwd[SMALL_MAX_CHAR_SIZE];
+					strcpy(cuvinte[1],getcwd(cwd,SMALL_MAX_CHAR_SIZE));
 				}
-				myls(cuvinte[1],sir);
+				myls(cuvinte[1],rezultat);
 			}
 			else
-				strcpy(sir,"Comanda ls are nevoie de 0 sau 1 argument: \"ls [path]\"");
+				strcpy(rezultat,"Comanda ls are nevoie de 0 sau 1 argument: \"ls [path]\"");
 		else if(strcmp(cuvinte[0],"help")==0)
 			if(count==1 || count==2)
 			{
 				if(count==1)
-					myHelp("help",sir);
+					myHelp("help",rezultat);
 				else
-					myHelp(cuvinte[1],sir);
+					myHelp(cuvinte[1],rezultat);
 			}
 			else
-				strcpy(sir,"Comanda help are nevoie de 0 sau 1 argument: \"help [comanda]\"");
+				strcpy(rezultat,"Comanda help are nevoie de 0 sau 1 argument: \"help [comanda]\"");
 		else if(strcmp(cuvinte[0],"pwd")==0)
 		{
 			if(count==1)
-				myPwd(sir);
+				myPwd(rezultat);
 			else
-				strcpy(sir,"Comanda pwd nu are argumente");
+				strcpy(rezultat,"Comanda pwd nu are argumente");
 		}
-		else strcpy(sir,"Comanda necunoscuta");
+		else strcpy(rezultat,"Comanda necunoscuta");
 	}
 }
 int main(int argc, char* argv[])
@@ -498,11 +502,11 @@ int main(int argc, char* argv[])
 	}
 	fprintf(fpass,"1\ncineva\nceva\nadmin\nqwerty");
 	fclose(fpass);
-	char communication_type_string[256];//1-pipe,2-fifo,3-socket,everything else-nothing
+	char communication_type_string[SMALL_MAX_CHAR_SIZE];//1-pipe,2-fifo,3-socket,everything else-nothing
 	printf("%s\n", "Alegeti tipul de comunicare dorit: 1-pipe, 2-fifo, 3-socket.");
 	while(1)
 	{
-		fgets(communication_type_string,256,stdin);
+		fgets(communication_type_string,SMALL_MAX_CHAR_SIZE,stdin);
 		int ok=0,i;
 		for(i=0;i<strlen(communication_type_string);i++)
 			if(!strchr(" \n",communication_type_string[i]))
@@ -572,7 +576,7 @@ int main(int argc, char* argv[])
 		case -1:perror("eroare la fork"); exit(1);		//eroare
 		case 0:		//procesul fiu
 		{
-			char sirDinFiu[MAX_CHAR_SIZE],users[200];
+			char sirDinFiu[MAX_CHAR_SIZE],users[SMALL_MAX_CHAR_SIZE];
 			int nrBytes,ok=0;
 			switch(communication_type)
 			{
@@ -665,14 +669,15 @@ int main(int argc, char* argv[])
 						write(pipefd2[1],&ok,sizeof(int));
 						exit(30);
 					}
-					if(-1==(nrBytes=read(fd,users,200)))
+					char* passwords=(char*) malloc(SMALL_MAX_CHAR_SIZE);
+					if(-1==(nrBytes=read(fd,passwords,SMALL_MAX_CHAR_SIZE)))
 						ok=2;
 					else
 					{
 						ok=0;
-						users[nrBytes]='\0';
+						passwords[nrBytes]='\0';
 						char *p;
-						p=strtok(users,"\n ");
+						p=strtok(passwords,"\n ");
 						int counter2=0;
 						while(p)
 						{
@@ -812,11 +817,11 @@ int main(int argc, char* argv[])
 			printf("%s\n","Comenzi disponibile: stat, find, cd, ls, help, pwd, quit.");
 
 			struct passwd *user;	//Uid, impreuna cu numele user-ului ce corespunde cu Uid
-			char *host=(char*)malloc(100);
-			char *cwd=(char*)malloc(256);
+			char *host=(char*)malloc(SMALL_MAX_CHAR_SIZE);
+			char *cwd=(char*)malloc(SMALL_MAX_CHAR_SIZE);
 			user=getpwuid(geteuid());
-			gethostname(host,100);
-			cwd=getcwd(cwd,256);
+			gethostname(host,SMALL_MAX_CHAR_SIZE);
+			cwd=getcwd(cwd,SMALL_MAX_CHAR_SIZE);
 			if(strstr(cwd,user->pw_dir))
 			{
 				cwd[0]='~';
@@ -849,7 +854,7 @@ int main(int argc, char* argv[])
 						{
 							chdir(sir+3);
 							strcpy(sir,"Director curent schimbat la ");
-							strcat(sir, getcwd(cwd,256));
+							strcat(sir, getcwd(cwd,SMALL_MAX_CHAR_SIZE));
 						}
 						printf("%s\n",sir);
 						fflush(stdout);
@@ -858,8 +863,8 @@ int main(int argc, char* argv[])
 					sir=malloc(MAX_CHAR_SIZE);	
 				}
 				user=getpwuid(geteuid());
-				gethostname(host,100);
-				cwd=getcwd(cwd,256);
+				gethostname(host,SMALL_MAX_CHAR_SIZE);
+				cwd=getcwd(cwd,SMALL_MAX_CHAR_SIZE);
 				if(strstr(cwd,user->pw_dir))
 				{
 					cwd[0]='~';
